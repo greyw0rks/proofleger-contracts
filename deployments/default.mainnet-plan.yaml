@@ -1,0 +1,32 @@
+---
+id: 0
+name: Mainnet deployment
+network: mainnet
+stacks-node: "https://stacks-node-api.mainnet.stacks.co"
+bitcoin-node: "http://blockstack:blockstacksystem@bitcoin.blockstack.com:8332"
+plan:
+  batches:
+    - id: 0
+      transactions:
+        - contract-publish:
+            contract-name: achievements
+            expected-sender: SP54H4FMBECPR6KEXYCWR4ATYG8PCGA5M96W2TZJ
+            cost: 21030
+            path: contracts/achievements.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: credentials
+            expected-sender: SP54H4FMBECPR6KEXYCWR4ATYG8PCGA5M96W2TZJ
+            cost: 13450
+            path: contracts/credentials.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: proofleger3
+            expected-sender: SP54H4FMBECPR6KEXYCWR4ATYG8PCGA5M96W2TZJ
+            cost: 12680
+            path: contracts/proofleger3.clar
+            anchor-block-only: true
+            clarity-version: 2
+      epoch: "2.4"
