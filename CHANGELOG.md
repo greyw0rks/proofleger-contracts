@@ -20,3 +20,21 @@
 - SP1SY1E599GN04XRD2DQBKV7E62HYBJR2CT9S5QKK.proofleger3
 - SP1SY1E599GN04XRD2DQBKV7E62HYBJR2CT9S5QKK.credentials
 - SP1SY1E599GN04XRD2DQBKV7E62HYBJR2CT9S5QKK.achievements
+
+## [1.1.0] - 2026-03-12
+
+### Added
+- Unit test suite for all three contracts (proofleger3, credentials, achievements)
+- GitHub Actions CI pipeline with Clarinet test runner
+- Deployment helper script with testnet/mainnet safety gate
+- Contract reference documentation
+- Error codes reference documentation
+- Integration guide for third-party developers
+
+### Changed
+- Improved deploy.sh with pre-deploy test gate
+- CI now runs on both push to main and pull requests
+
+### Security
+- Added CI security scan for hardcoded secrets in contracts
+- Documented all ERR_ codes and their conditions
