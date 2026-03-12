@@ -1,0 +1,38 @@
+name: ProofLedger Contracts CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Clarinet Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Clarinet
+        run: |
+          wget -nv https://github.com/hirosystems/clarinet/releases/download/v2.4.0/clarinet-linux-x64-glibc.tar.gz
+          tar -xf clarinet-linux-x64-glibc.tar.gz
+          chmod +x ./clarinet
+          sudo mv ./clarinet /usr/local/bin
+
+      - name: Check contract syntax
+        run: clarinet check
+
+      - name: Run unit tests
+        run: clarinet test
+
+  security:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for hardcoded secrets
+        run: |
+          ! grep -rn "private-key\|secret-key\|mnemonic" ./contracts/ --include="*.clar"
+          echo "No hardcoded secrets found."
