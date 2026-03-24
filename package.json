@@ -1,17 +1,37 @@
-
 {
   "name": "proofleger-mainnet-tests",
   "version": "1.0.0",
-  "description": "Run unit tests on this project.",
+  "description": "Testing suite for Proofleger smart contracts using Clarinet and Vitest",
   "type": "module",
-  "private": true,
+  "main": "index.js",
+  "author": {
+    "name": "greyw0rks",
+    "url": "https://github.com/greyw0rks"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/greyw0rks/proofleger-contracts.git"
+  },
+  "homepage": "https://github.com/greyw0rks/proofleger-contracts#readme",
+  "keywords": [
+    "stacks",
+    "bitcoin",
+    "clarity",
+    "testing",
+    "vitest",
+    "clarinet",
+    "web3"
+  ],
+  "private": false,
   "scripts": {
     "test": "vitest run",
-    "test:report": "vitest run -- --coverage --costs",
+    "test:report": "vitest run --coverage",
     "test:watch": "chokidar \"tests/**/*.ts\" \"contracts/**/*.clar\" -c \"npm run test:report\""
   },
-  "author": "",
-  "license": "ISC",
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
   "dependencies": {
     "@hirosystems/clarinet-sdk": "^2.3.2",
     "@stacks/transactions": "^6.12.0",
