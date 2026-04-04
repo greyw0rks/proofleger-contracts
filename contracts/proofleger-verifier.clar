@@ -23,12 +23,6 @@
 (define-data-var total-verifications uint u0)
 (define-data-var total-fees-collected uint u0)
 
-;; Read the main ProofLedger contract to confirm proof exists
-;; Adjust principal to your actual deployed contract address
-(define-read-only (proof-exists? (proof-hash (buff 32)))
-  (contract-call? 'SP1SY1E599GN04XRD2DQBKV7E62HYBJR2CT9S5QKK.proofleger get-proof proof-hash)
-)
-
 ;; PUBLIC: Verify a proof — charges 0.001 STX
 ;; Anyone can verify any hash; fee goes to CONTRACT-OWNER
 (define-public (verify-proof (proof-hash (buff 32)))
