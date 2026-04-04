@@ -5,7 +5,7 @@
 
 (define-map verification-log
   { proof-hash: (buff 32) }
-  { verifier: principal, block-height: uint, verification-count: uint }
+  { verifier: principal, burn-block-height: uint, verification-count: uint }
 )
 
 (define-data-var total-verifications uint u0)
@@ -21,12 +21,12 @@
       prev-entry
         (map-set verification-log
           { proof-hash: proof-hash }
-          { verifier: caller, block-height: block-height,
+          { verifier: caller, burn-block-height: burn-block-height,
             verification-count: (+ (get verification-count prev-entry) u1) }
         )
       (map-set verification-log
         { proof-hash: proof-hash }
-        { verifier: caller, block-height: block-height, verification-count: u1 }
+        { verifier: caller, burn-block-height: burn-block-height, verification-count: u1 }
       )
     )
     (var-set total-verifications (+ (var-get total-verifications) u1))
@@ -35,7 +35,7 @@
       event: "proof-verified",
       proof-hash: proof-hash,
       verifier: caller,
-      block: block-height,
+      block: burn-block-height,
       fee-paid: VERIFY-FEE
     })
     (ok true)
