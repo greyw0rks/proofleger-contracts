@@ -1,22 +1,45 @@
 # ProofLedger Contracts
 
-Three Clarity smart contracts deployed on Stacks mainnet.
-Anchor documents, issue credentials, mint soulbound NFTs.
+Clarity smart contracts for the ProofLedger document anchoring protocol on Stacks/Bitcoin.
 
 ## Contracts
 
-### proofleger3
-Core anchoring contract. Stores SHA-256 hashes on Bitcoin via Stacks.
-Deploy: SP1SY1E599GN04XRD2DQBKV7E62HYBJR2CT9S5QKK.proofleger3
+| Contract | Purpose |
+|---|---|
+| proofleger3 | Core document anchoring |
+| credentials | Verifiable credential issuance |
+| achievements | Soulbound NFTs |
+| endorsements | Social endorsements |
+| profiles | On-chain profile storage |
+| revocations | Document revocation |
+| reputation | Reputation score storage |
+| collections | Document grouping |
+| badges | Community badges |
+| registry | Trusted issuer registry |
+| governance | Proposals and voting |
+| subscriptions | Wallet subscriptions |
+| messaging | On-chain messages |
+| timestamps | General timestamp anchoring |
+| oracle | Trusted data feeds |
 
-### credentials
-On-chain attestation contract. Third parties can attest to anchored documents.
-Deploy: SP1SY1E599GN04XRD2DQBKV7E62HYBJR2CT9S5QKK.credentials
+## Deploy
 
-### achievements
-Soulbound NFT contract. Non-transferable achievement tokens tied to documents.
-Deploy: SP1SY1E599GN04XRD2DQBKV7E62HYBJR2CT9S5QKK.achievements
+```bash
+clarinet check
+clarinet test
+```
 
-## Usage
+## npm
 
-Interact via proofleger.vercel.app or directly via Stacks.js.
+```bash
+npm install proofleger-contracts
+```
+
+```javascript
+const { CONTRACTS, getContract } = require("proofleger-contracts");
+console.log(CONTRACTS.core);
+```
+
+## Live App
+
+[proofleger.vercel.app](https://proofleger.vercel.app)
