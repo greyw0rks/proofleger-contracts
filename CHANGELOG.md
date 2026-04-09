@@ -1,37 +1,37 @@
 # Changelog
 
-## [1.2.0] - 2026-04-07
+## [1.6.0] - 2026-04-09
 
 ### Added
 
 **New Contracts:**
-- `revocations.clar` — document revocation registry
-- `reputation.clar` — on-chain reputation score storage
-- `collections.clar` — named document collections
-- `badges.clar` — community-issued achievement badges
-- `registry.clar` — trusted issuer verification
-- `governance.clar` — on-chain proposals and voting
-- `subscriptions.clar` — wallet subscriptions
-- `messaging.clar` — on-chain public messages
-- `timestamps.clar` — general timestamp anchoring
-- `oracle.clar` — trusted data feeds
+- `staking.clar` — STX staking with lock period
+- `referrals.clar` — on-chain referral tracking
+- `whitelist.clar` — access control list
+- `leaderboard.clar` — contributor ranking
+- `certifier.clar` — batch document certification
 
 **Tests:**
-- Full test coverage for all 10 new contracts
-- 30+ new test cases
+- Full test coverage for all 5 new contracts
+- 16 new test cases
 
 **Docs:**
-- governance.md, collections.md, registry.md, badges.md
-- Security checklist updated
-- Error codes updated for all new contracts
-- SDK integration guide
-- Testing guide
+- staking.md, referrals.md, certifier.md, whitelist.md, leaderboard.md
+- ecosystem.md — full contract interaction map
 
-## [1.1.0] - 2026-03-12
-- Unit tests for original 3 contracts
-- GitHub Actions CI
-- Deployment scripts
+## [1.5.0] - 2026-04-07
+- 10 new contracts (revocations, reputation, collections, badges, registry, governance, subscriptions, messaging, timestamps, oracle)
+- Full test suite
+- Security checklist
+
+## [1.4.0] - 2026-04-06
+- Scripts: deploy, verify, stats, benchmark, monitor, snapshot
+
+## [1.3.0] - 2026-04-05
+- Documentation expansion
+
+## [1.2.0] - 2026-04-04
+- Test coverage for all original contracts
 
 ## [1.0.0] - 2026-03-08
 - Initial mainnet deployment
-- proofleger3, credentials, achievements
