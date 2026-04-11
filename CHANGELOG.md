@@ -1,37 +1,30 @@
 # Changelog
 
-## [1.6.0] - 2026-04-09
+## [1.7.1] - 2026-04-11
 
 ### Added
 
 **New Contracts:**
-- `staking.clar` — STX staking with lock period
-- `referrals.clar` — on-chain referral tracking
-- `whitelist.clar` — access control list
-- `leaderboard.clar` — contributor ranking
-- `certifier.clar` — batch document certification
+- `notary.clar` — on-chain notarization with multi-witness support
+- `escrow.clar` — document-gated STX escrow
+- `achievements-v2.clar` — soulbound NFTs with metadata URI and categories
+- `payment-splitter.clar` — proportional STX payment splitting
+- `proof-of-work.clar` — contributor work logging with document proofs
 
 **Tests:**
-- Full test coverage for all 5 new contracts
-- 16 new test cases
+- notary_test.ts — 4 test cases
+- notary_witness_test.ts — 2 test cases
+- achievements_v2_test.ts — 3 test cases
+- proof_of_work_test.ts — 3 test cases
 
 **Docs:**
-- staking.md, referrals.md, certifier.md, whitelist.md, leaderboard.md
-- ecosystem.md — full contract interaction map
+- notary.md, proof-of-work.md, achievements-v2.md, escrow.md
+
+## [1.6.1] - 2026-04-10
+- staking, referrals, whitelist, leaderboard, certifier contracts
 
 ## [1.5.0] - 2026-04-07
-- 10 new contracts (revocations, reputation, collections, badges, registry, governance, subscriptions, messaging, timestamps, oracle)
-- Full test suite
-- Security checklist
-
-## [1.4.0] - 2026-04-06
-- Scripts: deploy, verify, stats, benchmark, monitor, snapshot
-
-## [1.3.0] - 2026-04-05
-- Documentation expansion
-
-## [1.2.0] - 2026-04-04
-- Test coverage for all original contracts
+- 10 new contracts including governance, badges, oracle
 
 ## [1.0.0] - 2026-03-08
 - Initial mainnet deployment
