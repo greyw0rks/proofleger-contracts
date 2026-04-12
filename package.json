@@ -1,6 +1,6 @@
 {
   "name": "proofleger-mainnet-tests",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "Testing suite for Proofleger smart contracts using Clarinet and Vitest",
   "type": "module",
   "main": "index.js",
