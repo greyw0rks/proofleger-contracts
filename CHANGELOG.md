@@ -1,30 +1,34 @@
 # Changelog
 
-## [1.9.0] - 2026-04-12
+## [2.0.1] - 2026-04-14
 
 ### Added
 
 **New Contracts:**
-- `vouchers.clar` — one-time use voucher codes
-- `challenges.clar` — community proof challenges with rewards
-- `shares.clar` — fractional document ownership
-- `auctions.clar` — time-limited NFT bidding
-- `identity.clar` — self-sovereign identity with DID support
+- `multisig.clar` — M-of-N document approval
+- `attestation-v2.clar` — weighted attestation with credibility scores
+- `access-control.clar` — role-based access control
+- `snapshots.clar` — periodic protocol metrics snapshots
+- `dispatcher.clar` — document type action routing
 
 **Tests:**
-- vouchers_test.ts — 4 test cases
-- challenges_test.ts — 3 test cases
-- identity_test.ts — 3 test cases
-- auctions_test.ts — 3 test cases
+- multisig_test.ts — 4 test cases
+- attestation_v2_test.ts — 4 test cases
+- access_control_test.ts — 4 test cases
+- snapshots_test.ts — 3 test cases
+- dispatcher_test.ts — 3 test cases
 
 **Docs:**
-- identity.md, vouchers.md, challenges.md, auctions.md
+- multisig.md, access-control.md, attestation-v2.md, snapshots.md
 
-## [1.8.0] - 2026-04-11
-- notary, escrow, achievements-v2, proof-of-work, payment-splitter
+### Breaking Changes
+- None — all additions are new contracts
 
-## [1.7.0] - 2026-04-10
-- staking, referrals, whitelist, leaderboard, certifier
+## [2.0.0] - 2026-04-13
+- Major version bump — 20+ contracts in ecosystem
+
+## [1.9.1] - 2026-04-12
+- vouchers, challenges, shares, auctions, identity contracts
 
 ## [1.0.0] - 2026-03-08
 - Initial mainnet deployment
