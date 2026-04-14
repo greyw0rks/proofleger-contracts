@@ -1,34 +1,32 @@
 # Changelog
 
-## [2.0.1] - 2026-04-14
+## [2.2.0] - 2026-04-15
 
 ### Added
 
 **New Contracts:**
-- `multisig.clar` — M-of-N document approval
-- `attestation-v2.clar` — weighted attestation with credibility scores
-- `access-control.clar` — role-based access control
-- `snapshots.clar` — periodic protocol metrics snapshots
-- `dispatcher.clar` — document type action routing
+- `fee-collector.clar` — protocol fee collection and distribution
+- `credential-registry.clar` — global credential index by type
+- `proof-chain.clar` — verifiable evidence chains
+- `expiring-credentials.clar` — time-limited credential issuance
+- `document-updates.clar` — document version and supersession tracking
 
 **Tests:**
-- multisig_test.ts — 4 test cases
-- attestation_v2_test.ts — 4 test cases
-- access_control_test.ts — 4 test cases
-- snapshots_test.ts — 3 test cases
-- dispatcher_test.ts — 3 test cases
+- fee_collector_test.ts — 4 test cases
+- credential_registry_test.ts — 3 test cases
+- proof_chain_test.ts — 3 test cases
+- expiring_credentials_test.ts — 4 test cases
+- document_updates_test.ts — 3 test cases
 
 **Docs:**
-- multisig.md, access-control.md, attestation-v2.md, snapshots.md
+- credential-registry.md, expiring-credentials.md
+- proof-chain.md, document-updates.md
 
-### Breaking Changes
-- None — all additions are new contracts
+## [2.1.0] - 2026-04-14
+- multisig, attestation-v2, access-control, snapshots, dispatcher
 
 ## [2.0.0] - 2026-04-13
-- Major version bump — 20+ contracts in ecosystem
-
-## [1.9.1] - 2026-04-12
-- vouchers, challenges, shares, auctions, identity contracts
+- Major version — 20+ contract ecosystem
 
 ## [1.0.0] - 2026-03-08
 - Initial mainnet deployment
