@@ -1,32 +1,31 @@
 # Changelog
 
-## [2.2.0] - 2026-04-15
+## [2.2.2] - 2026-04-16
 
 ### Added
 
 **New Contracts:**
-- `fee-collector.clar` — protocol fee collection and distribution
-- `credential-registry.clar` — global credential index by type
-- `proof-chain.clar` — verifiable evidence chains
-- `expiring-credentials.clar` — time-limited credential issuance
-- `document-updates.clar` — document version and supersession tracking
+- `skill-tree.clar` — on-chain skill tracking with proof-backed endorsements
+- `publication.clar` — academic publication registry with citation tracking
+- `event-log.clar` — append-only audit event log
+- `proof-nft.clar` — transferable proof ownership NFTs
+- `community-pool.clar` — community funding pool with grants
 
 **Tests:**
-- fee_collector_test.ts — 4 test cases
-- credential_registry_test.ts — 3 test cases
-- proof_chain_test.ts — 3 test cases
-- expiring_credentials_test.ts — 4 test cases
-- document_updates_test.ts — 3 test cases
+- skill_tree_test.ts — 4 test cases
+- publication_test.ts — 3 test cases
+- event_log_test.ts — 3 test cases
+- proof_nft_test.ts — 3 test cases
+- community_pool_test.ts — 3 test cases
 
 **Docs:**
-- credential-registry.md, expiring-credentials.md
-- proof-chain.md, document-updates.md
+- skill-tree.md, publication.md, community-pool.md
 
-## [2.1.0] - 2026-04-14
+## [2.2.1] - 2026-04-15
+- fee-collector, credential-registry, proof-chain, expiring-credentials, document-updates
+
+## [2.2.0] - 2026-04-14
 - multisig, attestation-v2, access-control, snapshots, dispatcher
-
-## [2.0.0] - 2026-04-13
-- Major version — 20+ contract ecosystem
 
 ## [1.0.0] - 2026-03-08
 - Initial mainnet deployment
