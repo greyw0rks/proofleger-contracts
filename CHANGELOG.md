@@ -1,28 +1,29 @@
 # Changelog
 
-## [2.3.0] - 2026-04-17
+## [2.4.0] - 2026-04-18
 
 ### Added
 
-**New Contracts:**
-- `degree-registry.clar` — institutional degree issuance and verification
-- `license-registry.clar` — professional licenses with expiry and renewal
-- `work-history.clar` — verifiable employment history
-- `certificate-template.clar` — reusable templates for bulk credential issuance
-- `cross-chain-bridge.clar` — multi-chain proof anchoring records
+**New Contracts — Industry Verticals:**
+- `medical-records.clar` — privacy-preserving medical document anchoring
+- `real-estate.clar` — property transfer record registry
+- `insurance-claims.clar` — insurance claim document management
+- `supply-chain.clar` — multi-step supply chain document tracking
+- `legal-contracts.clar` — bilateral contract with countersignature
 
 **Tests:**
-- degree_registry_test.ts — 3 test cases
-- license_registry_test.ts — 4 test cases
-- work_history_test.ts — 3 test cases
-- certificate_template_test.ts — 3 test cases
-- cross_chain_bridge_test.ts — 3 test cases
+- medical_records_test.ts — 3 test cases
+- real_estate_test.ts — 3 test cases
+- supply_chain_test.ts — 3 test cases
+- legal_contracts_test.ts — 4 test cases
+- insurance_claims_test.ts — 3 test cases
 
 **Docs:**
-- degree-registry.md, work-history.md, cross-chain.md, certificate-template.md
+- use-cases.md — full industry vertical guide
+- legal-contracts.md, supply-chain.md, medical-records.md
 
-## [2.2.1] - 2026-04-15
-- fee-collector, credential-registry, proof-chain, expiring-credentials, document-updates
+## [2.3.0] - 2026-04-17
+- degree-registry, license-registry, work-history, certificate-template, cross-chain-bridge
 
 ## [2.2.0] - 2026-04-14
 - multisig, attestation-v2, access-control, snapshots, dispatcher
