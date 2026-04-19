@@ -6,20 +6,23 @@ describe("auctions", () => {
   beforeEach(async () => { simnet = await initSimnet(); accounts = simnet.getAccounts(); });
   it("creates an auction", () => {
     const d = accounts.get("deployer")!;
+    const hash = Cl.buffer(Buffer.from("a".repeat(64), "hex"));
     const r = simnet.callPublicFn("auctions", "create-auction",
-      [Cl.uint(1), Cl.uint(1000000), Cl.uint(144)], d);
+      [hash, Cl.uint(500000), Cl.uint(144)], d);
     expect(r.result).toBeOk(Cl.uint(1));
   });
   it("places a valid bid", () => {
     const d = accounts.get("deployer")!; const w1 = accounts.get("wallet_1")!;
-    simnet.callPublicFn("auctions", "create-auction", [Cl.uint(1), Cl.uint(1000000), Cl.uint(144)], d);
-    const r = simnet.callPublicFn("auctions", "place-bid", [Cl.uint(1), Cl.uint(2000000)], w1);
+    const hash = Cl.buffer(Buffer.from("b".repeat(64), "hex"));
+    simnet.callPublicFn("auctions", "create-auction", [hash, Cl.uint(100000), Cl.uint(144)], d);
+    const r = simnet.callPublicFn("auctions", "place-bid", [Cl.uint(1), Cl.uint(200000)], w1);
     expect(r.result).toBeOk(Cl.bool(true));
   });
-  it("rejects bid below minimum", () => {
+  it("rejects bid below start price", () => {
     const d = accounts.get("deployer")!; const w1 = accounts.get("wallet_1")!;
-    simnet.callPublicFn("auctions", "create-auction", [Cl.uint(1), Cl.uint(5000000), Cl.uint(144)], d);
-    const r = simnet.callPublicFn("auctions", "place-bid", [Cl.uint(1), Cl.uint(1000000)], w1);
+    const hash = Cl.buffer(Buffer.from("c".repeat(64), "hex"));
+    simnet.callPublicFn("auctions", "create-auction", [hash, Cl.uint(1000000), Cl.uint(144)], d);
+    const r = simnet.callPublicFn("auctions", "place-bid", [Cl.uint(1), Cl.uint(500)], w1);
     expect(r.result).toBeErr(Cl.uint(5));
   });
 });
