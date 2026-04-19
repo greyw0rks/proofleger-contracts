@@ -6,31 +6,35 @@ describe("vouchers", () => {
   beforeEach(async () => { simnet = await initSimnet(); accounts = simnet.getAccounts(); });
   it("issues a voucher", () => {
     const d = accounts.get("deployer")!;
-    const hash = Cl.buffer(Buffer.from("a".repeat(64), "hex"));
+    const code = Cl.buffer(Buffer.from("a".repeat(64), "hex"));
+    const hash = Cl.buffer(Buffer.from("b".repeat(64), "hex"));
     const r = simnet.callPublicFn("vouchers", "issue-voucher",
-      [Cl.stringAscii("PROMO2026"), hash, Cl.uint(1000), Cl.uint(144)], d);
+      [code, hash, Cl.stringAscii("diploma")], d);
     expect(r.result).toBeOk(Cl.bool(true));
   });
-  it("rejects duplicate voucher code", () => {
-    const d = accounts.get("deployer")!;
-    const hash = Cl.buffer(Buffer.from("b".repeat(64), "hex"));
-    simnet.callPublicFn("vouchers", "issue-voucher", [Cl.stringAscii("DUP"), hash, Cl.uint(100), Cl.uint(144)], d);
-    const r = simnet.callPublicFn("vouchers", "issue-voucher", [Cl.stringAscii("DUP"), hash, Cl.uint(100), Cl.uint(144)], d);
-    expect(r.result).toBeErr(Cl.uint(1));
-  });
-  it("redeems a valid voucher", () => {
+  it("redeems a voucher", () => {
     const d = accounts.get("deployer")!; const w1 = accounts.get("wallet_1")!;
-    const hash = Cl.buffer(Buffer.from("c".repeat(64), "hex"));
-    simnet.callPublicFn("vouchers", "issue-voucher", [Cl.stringAscii("REDEEM1"), hash, Cl.uint(100), Cl.uint(144)], d);
-    const r = simnet.callPublicFn("vouchers", "redeem-voucher", [Cl.stringAscii("REDEEM1")], w1);
-    expect(r.result).toBeOk();
+    const code = Cl.buffer(Buffer.from("c".repeat(64), "hex"));
+    const hash = Cl.buffer(Buffer.from("d".repeat(64), "hex"));
+    simnet.callPublicFn("vouchers", "issue-voucher", [code, hash, Cl.stringAscii("award")], d);
+    const r = simnet.callPublicFn("vouchers", "redeem-voucher", [code], w1);
+    expect(r.result).toBeOk(Cl.bool(true));
   });
   it("rejects double redemption", () => {
     const d = accounts.get("deployer")!; const w1 = accounts.get("wallet_1")!;
-    const hash = Cl.buffer(Buffer.from("d".repeat(64), "hex"));
-    simnet.callPublicFn("vouchers", "issue-voucher", [Cl.stringAscii("ONCE"), hash, Cl.uint(100), Cl.uint(144)], d);
-    simnet.callPublicFn("vouchers", "redeem-voucher", [Cl.stringAscii("ONCE")], w1);
-    const r = simnet.callPublicFn("vouchers", "redeem-voucher", [Cl.stringAscii("ONCE")], w1);
-    expect(r.result).toBeErr(Cl.uint(4));
+    const code = Cl.buffer(Buffer.from("e".repeat(64), "hex"));
+    const hash = Cl.buffer(Buffer.from("f".repeat(64), "hex"));
+    simnet.callPublicFn("vouchers", "issue-voucher", [code, hash, Cl.stringAscii("cert")], d);
+    simnet.callPublicFn("vouchers", "redeem-voucher", [code], w1);
+    const r = simnet.callPublicFn("vouchers", "redeem-voucher", [code], w1);
+    expect(r.result).toBeErr(Cl.uint(3));
+  });
+  it("rejects duplicate issue code", () => {
+    const d = accounts.get("deployer")!;
+    const code = Cl.buffer(Buffer.from("1".repeat(64), "hex"));
+    const hash = Cl.buffer(Buffer.from("2".repeat(64), "hex"));
+    simnet.callPublicFn("vouchers", "issue-voucher", [code, hash, Cl.stringAscii("cert")], d);
+    const r = simnet.callPublicFn("vouchers", "issue-voucher", [code, hash, Cl.stringAscii("cert")], d);
+    expect(r.result).toBeErr(Cl.uint(1));
   });
 });
