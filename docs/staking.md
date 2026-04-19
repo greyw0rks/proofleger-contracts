@@ -1,30 +1,29 @@
 # ProofLedger Staking
 
-The `staking.clar` contract allows STX holders to signal commitment to the ecosystem.
+The `staking.clar` contract lets credential holders stake STX to earn yield and boost reputation.
 
-## Stake
+## Stake STX
 
 ```clarity
-(contract-call? .staking stake u100000)
-;; Locks 0.1 STX for ~1 day (144 blocks)
+(contract-call? .staking stake u1000000)    ;; stake 1 STX
 ```
 
 ## Unstake
 
 ```clarity
-;; Only works after lock period expires
 (contract-call? .staking unstake)
-;; Returns the staked amount
+;; Returns: (ok amount-returned)
 ```
 
-## Check Stake
+## Check Your Stake
 
 ```clarity
 (contract-call? .staking get-stake tx-sender)
-;; Returns: { amount, staked-at, unlock-at }
+;; Returns: { amount, staked-at, last-claim, total-claimed }
 ```
 
-## Lock Period
+## Protocol Stats
 
-Staked STX is locked for **144 blocks (~1 day)**.
-Early unstaking is rejected with `err u4`.
+```clarity
+(contract-call? .staking get-total-staked)
+```
