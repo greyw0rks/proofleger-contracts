@@ -1,35 +1,43 @@
 ;; oracle.clar
-;; ProofLedger Oracle Contract
-;; Anchor off-chain data feeds on-chain with trusted oracle addresses
+;; ProofLedger On-Chain Oracle
+;; Authorized oracle feeds for contract data dependencies
 
-(define-map oracles
-  { address: principal }
-  { name: (string-ascii 100), active: bool, registered-at: uint })
+(define-map oracle-data
+  { feed: (string-ascii 50) }
+  { value: uint, updated-at: uint, updater: principal,
+    description: (string-ascii 100) })
 
-(define-map data-feeds
-  { feed-id: (string-ascii 100), oracle: principal }
-  { value: (string-ascii 500), updated-at: uint, round: uint })
+(define-map authorized-updaters
+  { updater: principal }
+  { active: bool, added-at: uint })
 
-(define-data-var contract-owner principal tx-sender)
+(define-data-var oracle-owner principal tx-sender)
 
-;; register-oracle: owner adds a trusted oracle address
-(define-public (register-oracle (oracle principal) (name (string-ascii 100)))
+;; authorize-updater: owner grants oracle update rights
+(define-public (authorize-updater (updater principal))
   (begin
-    (asserts! (is-eq tx-sender (var-get contract-owner)) (err u403))
-    (map-set oracles { address: oracle }
-      { name: name, active: true, registered-at: stacks-block-height })
+    (asserts! (is-eq tx-sender (var-get oracle-owner)) (err u401))
+    (map-set authorized-updaters { updater: updater } { active: true, added-at: stacks-block-height })
     (ok true)))
 
-;; update-feed: oracle pushes new data
-;; Errors: u1 = not an oracle, u2 = oracle inactive
-(define-public (update-feed (feed-id (string-ascii 100)) (value (string-ascii 500)))
-  (let ((oracle (unwrap! (map-get? oracles { address: tx-sender }) (err u1)))
-        (existing (map-get? data-feeds { feed-id: feed-id, oracle: tx-sender }))
-        (round (default-to u0 (get round existing))))
-    (asserts! (get active oracle) (err u2))
-    (map-set data-feeds { feed-id: feed-id, oracle: tx-sender }
-      { value: value, updated-at: stacks-block-height, round: (+ round u1) })
+;; update-feed: authorized updater pushes a new value
+;; Errors: u403 = not authorized, u1 = invalid value
+(define-public (update-feed (feed (string-ascii 50)) (value uint) (description (string-ascii 100)))
+  (begin
+    (asserts!
+      (or (is-eq tx-sender (var-get oracle-owner))
+          (default-to false (get active (map-get? authorized-updaters { updater: tx-sender }))))
+      (err u403))
+    (map-set oracle-data { feed: feed }
+      { value: value, updated-at: stacks-block-height,
+        updater: tx-sender, description: description })
     (ok true)))
 
-(define-read-only (get-feed (feed-id (string-ascii 100)) (oracle principal))
-  (map-get? data-feeds { feed-id: feed-id, oracle: oracle }))
+(define-read-only (get-feed (feed (string-ascii 50)))
+  (map-get? oracle-data { feed: feed }))
+
+(define-read-only (get-feed-value (feed (string-ascii 50)))
+  (get value (map-get? oracle-data { feed: feed })))
+
+(define-read-only (is-authorized (updater principal))
+  (default-to false (get active (map-get? authorized-updaters { updater: updater }))))
