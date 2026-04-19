@@ -1,41 +1,53 @@
 ;; staking.clar
-;; ProofLedger Reputation Staking
-;; Stake STX to signal commitment to the ProofLedger ecosystem
-
-(define-fungible-token proof-stake)
+;; ProofLedger Staking
+;; Credential holders stake STX to earn yield and increase reputation
 
 (define-map stakes
   { staker: principal }
-  { amount: uint, staked-at: uint, unlock-at: uint })
+  { amount: uint, staked-at: uint,
+    last-claim: uint, total-claimed: uint })
+
+(define-map staking-rewards
+  { epoch: uint }
+  { total-staked: uint, reward-pool: uint, distributed: bool })
 
 (define-data-var total-staked uint u0)
-(define-constant LOCK_PERIOD u144) ;; ~1 day in blocks
+(define-data-var epoch-count uint u0)
+(define-data-var contract-owner principal tx-sender)
 
-;; stake: lock STX tokens to signal ecosystem commitment
-;; Errors: u1 = already staking, u2 = amount must be positive
+;; stake: deposit STX into the staking pool
+;; Errors: u1 = zero amount, u2 = already staking (use add-stake)
 (define-public (stake (amount uint))
   (begin
-    (asserts! (is-none (map-get? stakes { staker: tx-sender })) (err u1))
-    (asserts! (> amount u0) (err u2))
+    (asserts! (> amount u0) (err u1))
+    (asserts! (is-none (map-get? stakes { staker: tx-sender })) (err u2))
     (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
     (map-set stakes { staker: tx-sender }
-      { amount: amount, staked-at: stacks-block-height, unlock-at: (+ stacks-block-height LOCK_PERIOD) })
+      { amount: amount, staked-at: stacks-block-height,
+        last-claim: stacks-block-height, total-claimed: u0 })
     (var-set total-staked (+ (var-get total-staked) amount))
     (ok true)))
 
-;; unstake: withdraw STX after lock period expires
-;; Errors: u3 = no stake found, u4 = still locked
+;; unstake: withdraw STX from the pool
+;; Errors: u3 = no stake found
 (define-public (unstake)
-  (let ((stake-data (unwrap! (map-get? stakes { staker: tx-sender }) (err u3))))
-    (asserts! (>= stacks-block-height (get unlock-at stake-data)) (err u4))
-    (let ((amount (get amount stake-data)))
-      (try! (as-contract (stx-transfer? amount tx-sender tx-sender)))
-      (map-delete stakes { staker: tx-sender })
-      (var-set total-staked (- (var-get total-staked) amount))
-      (ok amount))))
+  (let ((s (unwrap! (map-get? stakes { staker: tx-sender }) (err u3))))
+    (try! (as-contract (stx-transfer? (get amount s) tx-sender tx-sender)))
+    (var-set total-staked (- (var-get total-staked) (get amount s)))
+    (map-delete stakes { staker: tx-sender })
+    (ok (get amount s))))
+
+;; fund-rewards: owner adds to the reward pool for an epoch
+(define-public (fund-rewards (amount uint))
+  (let ((epoch (+ (var-get epoch-count) u1)))
+    (asserts! (is-eq tx-sender (var-get contract-owner)) (err u401))
+    (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
+    (map-set staking-rewards { epoch: epoch }
+      { total-staked: (var-get total-staked), reward-pool: amount, distributed: false })
+    (var-set epoch-count epoch)
+    (ok epoch)))
 
 (define-read-only (get-stake (staker principal))
   (map-get? stakes { staker: staker }))
 
-(define-read-only (get-total-staked)
-  (var-get total-staked))
+(define-read-only (get-total-staked) (var-get total-staked))
