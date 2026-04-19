@@ -1,31 +1,31 @@
 # Changelog
 
-## [2.5.0] - 2026-04-19
+## [2.6.0] - 2026-04-20
 
 ### Added
 
 **New Contracts:**
-- `proof-of-attendance.clar` — event attendance credentials
-- `research-grant.clar` — milestone-based research funding
-- `data-marketplace.clar` — verified dataset monetization
-- `consent-registry.clar` — GDPR-inspired consent management
-- `token-gating.clar` — NFT/credential-gated resource access
+- `vouchers.clar` — single-use credential vouchers
+- `challenges.clar` — skill challenges with proof submission and STX rewards
+- `auctions.clar` — time-limited auctions for credential NFTs
+- `oracle.clar` — trusted price and data oracle
+- `staking.clar` — STX staking pool for credential holders
 
 **Tests:**
-- proof_of_attendance_test.ts — 4 test cases
-- consent_registry_test.ts — 4 test cases
-- data_marketplace_test.ts — 3 test cases
-- research_grant_test.ts — 3 test cases
-- token_gating_test.ts — 3 test cases
+- vouchers_test.ts — 4 test cases
+- challenges_test.ts — 3 test cases
+- oracle_test.ts — 4 test cases
+- staking_test.ts — 4 test cases
+- auctions_test.ts — 3 test cases
 
 **Docs:**
-- proof-of-attendance.md, data-marketplace.md, consent-registry.md
+- vouchers.md, challenges.md, staking.md
+
+## [2.5.0] - 2026-04-19
+- proof-of-attendance, research-grant, data-marketplace, consent-registry, token-gating
 
 ## [2.4.0] - 2026-04-18
 - medical-records, real-estate, insurance-claims, supply-chain, legal-contracts
-
-## [2.3.0] - 2026-04-17
-- degree-registry, license-registry, work-history, certificate-template, cross-chain-bridge
 
 ## [1.0.0] - 2026-03-08
 - Initial mainnet deployment
