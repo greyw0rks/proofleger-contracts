@@ -4,22 +4,23 @@ import { Cl } from "@stacks/transactions";
 describe("reputation", () => {
   let simnet: any; let accounts: Map<string, string>;
   beforeEach(async () => { simnet = await initSimnet(); accounts = simnet.getAccounts(); });
-  it("sets a reputation score", () => {
-    const d = accounts.get("deployer")!;
-    const r = simnet.callPublicFn("reputation", "set-reputation", [Cl.standardPrincipal(d), Cl.uint(250), Cl.stringAscii("Expert")], d);
-    expect(r.result).toBeOk(Cl.bool(true));
-  });
-  it("retrieves a reputation score", () => {
-    const d = accounts.get("deployer")!;
-    simnet.callPublicFn("reputation", "set-reputation", [Cl.standardPrincipal(d), Cl.uint(500), Cl.stringAscii("Authority")], d);
-    const r = simnet.callReadOnlyFn("reputation", "get-reputation", [Cl.standardPrincipal(d)], d);
-    expect(r.result).toBeSome();
-  });
-  it("increments total scored count", () => {
+  it("records an anchor and increments score", () => {
     const d = accounts.get("deployer")!; const w1 = accounts.get("wallet_1")!;
-    simnet.callPublicFn("reputation", "set-reputation", [Cl.standardPrincipal(d), Cl.uint(100), Cl.stringAscii("Contributor")], d);
-    simnet.callPublicFn("reputation", "set-reputation", [Cl.standardPrincipal(w1), Cl.uint(50), Cl.stringAscii("Builder")], w1);
-    const r = simnet.callReadOnlyFn("reputation", "get-total-scored", [], d);
-    expect(r.result).toBeUint(2);
+    simnet.callPublicFn("reputation", "record-anchor", [Cl.standardPrincipal(w1)], d);
+    const r = simnet.callReadOnlyFn("reputation", "get-score", [Cl.standardPrincipal(w1)], d);
+    expect(r.result).toBeUint(10);
+  });
+  it("accumulates score from multiple activities", () => {
+    const d = accounts.get("deployer")!; const w1 = accounts.get("wallet_1")!;
+    simnet.callPublicFn("reputation", "record-anchor", [Cl.standardPrincipal(w1)], d);
+    simnet.callPublicFn("reputation", "record-attest", [Cl.standardPrincipal(w1)], d);
+    simnet.callPublicFn("reputation", "record-nft",    [Cl.standardPrincipal(w1)], d);
+    const r = simnet.callReadOnlyFn("reputation", "get-score", [Cl.standardPrincipal(w1)], d);
+    expect(r.result).toBeUint(40); // 10 + 5 + 25
+  });
+  it("rejects unauthorized record", () => {
+    const w1 = accounts.get("wallet_1")!; const w2 = accounts.get("wallet_2")!;
+    const r = simnet.callPublicFn("reputation", "record-anchor", [Cl.standardPrincipal(w2)], w1);
+    expect(r.result).toBeErr(Cl.uint(401));
   });
 });
