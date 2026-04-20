@@ -1,35 +1,38 @@
-# ProofLedger Identity
+# ProofLedger Self-Sovereign Identity
 
-The `identity.clar` contract enables self-sovereign identity on Stacks.
+The `identity.clar` contract creates wallet-native identity profiles with credential claims.
 
 ## Register Identity
 
 ```clarity
 (contract-call? .identity register-identity
-  "did:stacks:SP1SY1E599GN04XRD2DQBKV7E62HYBJR2CT9S5QKK"
-  "Alice Builder")
+  "greyw0rks"
+  "Web3 founder building on Stacks and Celo"
+  0x<identity-document-hash>)
 ```
 
-## Add Claims
+## Add a Claim
+
+Link credentials to your identity:
 
 ```clarity
 (contract-call? .identity add-claim
   "education"
-  "MIT Computer Science 2024"
-  0x<proof-hash>)
+  0x<degree-document-hash>)
+
+(contract-call? .identity add-claim
+  "employment"
+  0x<work-contract-hash>)
 ```
 
 ## Read Identity
 
 ```clarity
-(contract-call? .identity get-identity SP_ADDRESS)
-;; Returns: { did, display-name, created-at, updated-at }
-
+(contract-call? .identity has-identity SP_ADDRESS)  ;; bool
+(contract-call? .identity get-identity SP_ADDRESS)  ;; full profile
 (contract-call? .identity get-claim SP_ADDRESS "education")
-;; Returns: { value, proof-hash, issued-at, issuer }
 ```
 
-## DID Format
+## Claim Types
 
-Recommended DID format for Stacks:
-`did:stacks:{SP_ADDRESS}`
+`education`, `employment`, `certification`, `publication`, `identity`, `other`
