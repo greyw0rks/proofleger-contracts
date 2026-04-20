@@ -1,40 +1,55 @@
 ;; identity.clar
 ;; ProofLedger Self-Sovereign Identity
-;; Link DIDs and identity claims to Stacks wallets
+;; Link a wallet to a verifiable identity with supporting proofs
 
 (define-map identities
-  { owner: principal }
-  { did: (string-ascii 256), display-name: (string-ascii 100),
-    avatar-hash: (optional (buff 32)), created-at: uint, updated-at: uint })
+  { principal: principal }
+  { display-name: (string-ascii 50), bio: (string-ascii 200),
+    identity-hash: (buff 32), created-at: uint,
+    last-updated: uint, verified: bool })
 
 (define-map identity-claims
-  { owner: principal, claim-type: (string-ascii 50) }
-  { value: (string-ascii 200), proof-hash: (buff 32), issued-at: uint, issuer: principal })
+  { principal: principal, claim-type: (string-ascii 50) }
+  { proof-hash: (buff 32), claimed-at: uint, attested: bool })
 
 (define-data-var total-identities uint u0)
 
-;; register-identity: create a DID-linked identity
+;; register-identity: wallet creates on-chain identity
 ;; Errors: u1 = already registered
-(define-public (register-identity (did (string-ascii 256)) (display-name (string-ascii 100)))
+(define-public (register-identity (display-name (string-ascii 50))
+                                    (bio (string-ascii 200))
+                                    (identity-hash (buff 32)))
   (begin
-    (asserts! (is-none (map-get? identities { owner: tx-sender })) (err u1))
-    (asserts! (> (len did) u0) (err u2))
-    (map-set identities { owner: tx-sender }
-      { did: did, display-name: display-name, avatar-hash: none,
-        created-at: stacks-block-height, updated-at: stacks-block-height })
+    (asserts! (is-none (map-get? identities { principal: tx-sender })) (err u1))
+    (map-set identities { principal: tx-sender }
+      { display-name: display-name, bio: bio,
+        identity-hash: identity-hash,
+        created-at: stacks-block-height, last-updated: stacks-block-height,
+        verified: false })
     (var-set total-identities (+ (var-get total-identities) u1))
     (ok true)))
 
-;; add-claim: attach a verifiable claim to an identity
-(define-public (add-claim (claim-type (string-ascii 50)) (value (string-ascii 200)) (proof-hash (buff 32)))
+;; add-claim: attach a supporting credential to identity
+(define-public (add-claim (claim-type (string-ascii 50)) (proof-hash (buff 32)))
   (begin
-    (asserts! (is-some (map-get? identities { owner: tx-sender })) (err u3))
-    (map-set identity-claims { owner: tx-sender, claim-type: claim-type }
-      { value: value, proof-hash: proof-hash, issued-at: stacks-block-height, issuer: tx-sender })
+    (asserts! (is-some (map-get? identities { principal: tx-sender })) (err u2))
+    (map-set identity-claims { principal: tx-sender, claim-type: claim-type }
+      { proof-hash: proof-hash, claimed-at: stacks-block-height, attested: false })
     (ok true)))
 
-(define-read-only (get-identity (owner principal))
-  (map-get? identities { owner: owner }))
+;; update-bio: update display name and bio
+(define-public (update-bio (display-name (string-ascii 50)) (bio (string-ascii 200)))
+  (let ((id (unwrap! (map-get? identities { principal: tx-sender }) (err u2))))
+    (map-set identities { principal: tx-sender }
+      (merge id { display-name: display-name, bio: bio,
+                  last-updated: stacks-block-height }))
+    (ok true)))
 
-(define-read-only (get-claim (owner principal) (claim-type (string-ascii 50)))
-  (map-get? identity-claims { owner: owner, claim-type: claim-type }))
+(define-read-only (get-identity (user principal))
+  (map-get? identities { user: user }))
+
+(define-read-only (get-claim (user principal) (claim-type (string-ascii 50)))
+  (map-get? identity-claims { principal: user, claim-type: claim-type }))
+
+(define-read-only (has-identity (user principal))
+  (is-some (map-get? identities { principal: user })))
