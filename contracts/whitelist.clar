@@ -1,34 +1,55 @@
 ;; whitelist.clar
-;; ProofLedger Access Whitelist
-;; Manage access to gated ProofLedger features
+;; ProofLedger Issuer Whitelist
+;; Manage approved institutions that can issue credentials
 
 (define-map whitelist
-  { address: principal }
-  { added-at: uint, added-by: principal, tier: (string-ascii 20) })
+  { issuer: principal }
+  { name: (string-ascii 100), category: (string-ascii 50),
+    approved-at: uint, approved-by: principal, active: bool })
 
-(define-data-var contract-owner principal tx-sender)
-(define-data-var whitelist-count uint u0)
+(define-map whitelist-requests
+  { requester: principal }
+  { name: (string-ascii 100), category: (string-ascii 50),
+    requested-at: uint, approved: bool })
 
-;; add-to-whitelist: owner adds an address with a tier
-;; Errors: u403 = not owner, u1 = already whitelisted
-(define-public (add-to-whitelist (address principal) (tier (string-ascii 20)))
+(define-data-var whitelist-admin principal tx-sender)
+(define-data-var total-approved uint u0)
+
+;; request-approval: institution requests whitelist inclusion
+;; Errors: u1 = already whitelisted
+(define-public (request-approval (name (string-ascii 100)) (category (string-ascii 50)))
   (begin
-    (asserts! (is-eq tx-sender (var-get contract-owner)) (err u403))
-    (asserts! (is-none (map-get? whitelist { address: address })) (err u1))
-    (map-set whitelist { address: address }
-      { added-at: stacks-block-height, added-by: tx-sender, tier: tier })
-    (var-set whitelist-count (+ (var-get whitelist-count) u1))
+    (asserts! (is-none (map-get? whitelist { issuer: tx-sender })) (err u1))
+    (map-set whitelist-requests { requester: tx-sender }
+      { name: name, category: category,
+        requested-at: stacks-block-height, approved: false })
     (ok true)))
 
-;; remove-from-whitelist: owner removes an address
-(define-public (remove-from-whitelist (address principal))
+;; approve-issuer: admin adds an institution to the whitelist
+;; Errors: u401 = not admin
+(define-public (approve-issuer (issuer principal) (name (string-ascii 100)) (category (string-ascii 50)))
   (begin
-    (asserts! (is-eq tx-sender (var-get contract-owner)) (err u403))
-    (map-delete whitelist { address: address })
+    (asserts! (is-eq tx-sender (var-get whitelist-admin)) (err u401))
+    (map-set whitelist { issuer: issuer }
+      { name: name, category: category,
+        approved-at: stacks-block-height, approved-by: tx-sender, active: true })
+    (var-set total-approved (+ (var-get total-approved) u1))
+    (match (map-get? whitelist-requests { requester: issuer })
+      req (map-set whitelist-requests { requester: issuer } (merge req { approved: true }))
+      true)
     (ok true)))
 
-(define-read-only (is-whitelisted (address principal))
-  (is-some (map-get? whitelist { address: address })))
+;; revoke-issuer: admin removes from whitelist
+(define-public (revoke-issuer (issuer principal))
+  (begin
+    (asserts! (is-eq tx-sender (var-get whitelist-admin)) (err u401))
+    (match (map-get? whitelist { issuer: issuer })
+      w (map-set whitelist { issuer: issuer } (merge w { active: false }))
+      true)
+    (ok true)))
 
-(define-read-only (get-whitelist-entry (address principal))
-  (map-get? whitelist { address: address }))
+(define-read-only (is-approved (issuer principal))
+  (default-to false (get active (map-get? whitelist { issuer: issuer }))))
+
+(define-read-only (get-issuer-info (issuer principal))
+  (map-get? whitelist { issuer: issuer }))
