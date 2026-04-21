@@ -1,35 +1,46 @@
 ;; subscriptions.clar
-;; ProofLedger Wallet Subscriptions
-;; Follow other wallets to track their proof activity
+;; ProofLedger Subscription Tiers
+;; Monthly subscription plans unlocking pro features
 
 (define-map subscriptions
-  { subscriber: principal, publisher: principal }
-  { subscribed-at: uint, active: bool })
+  { subscriber: principal }
+  { tier: (string-ascii 20), expires-at: uint,
+    started-at: uint, total-paid: uint })
 
-(define-map subscriber-count
-  { publisher: principal }
-  { count: uint })
+(define-map tier-config
+  { tier: (string-ascii 20) }
+  { price: uint, duration: uint, active: bool })
 
-;; subscribe: follow a publisher wallet
-;; Errors: u1 = cannot subscribe to self, u2 = already subscribed
-(define-public (subscribe (publisher principal))
-  (let ((count (default-to u0 (get count (map-get? subscriber-count { publisher: publisher })))))
-    (asserts! (not (is-eq tx-sender publisher)) (err u1))
-    (asserts! (is-none (map-get? subscriptions { subscriber: tx-sender, publisher: publisher })) (err u2))
-    (map-set subscriptions { subscriber: tx-sender, publisher: publisher }
-      { subscribed-at: stacks-block-height, active: true })
-    (map-set subscriber-count { publisher: publisher } { count: (+ count u1) })
+(define-data-var contract-owner principal tx-sender)
+(define-data-var total-subscribers uint u0)
+
+;; init default tiers at deploy
+(map-set tier-config { tier: "basic" }    { price: u5000000,  duration: u4320, active: true })   ;; 5 STX/month
+(map-set tier-config { tier: "pro" }      { price: u15000000, duration: u4320, active: true })   ;; 15 STX/month
+(map-set tier-config { tier: "enterprise"}{ price: u50000000, duration: u4320, active: true })   ;; 50 STX/month
+
+;; subscribe: pay STX to activate subscription tier
+;; Errors: u1 = tier not found, u2 = tier not active
+(define-public (subscribe (tier (string-ascii 20)))
+  (let ((config (unwrap! (map-get? tier-config { tier: tier }) (err u1))))
+    (asserts! (get active config) (err u2))
+    (try! (stx-transfer? (get price config) tx-sender (as-contract tx-sender)))
+    (let ((existing (map-get? subscriptions { subscriber: tx-sender }))
+          (start (default-to stacks-block-height (match existing e (get expires-at e) none))))
+      (when (is-none existing) (var-set total-subscribers (+ (var-get total-subscribers) u1)))
+      (map-set subscriptions { subscriber: tx-sender }
+        { tier: tier, expires-at: (+ start (get duration config)),
+          started-at: stacks-block-height,
+          total-paid: (+ (default-to u0 (get total-paid existing)) (get price config)) }))
     (ok true)))
 
-;; unsubscribe: stop following a wallet
-(define-public (unsubscribe (publisher principal))
-  (let ((existing (unwrap! (map-get? subscriptions { subscriber: tx-sender, publisher: publisher }) (err u3))))
-    (map-set subscriptions { subscriber: tx-sender, publisher: publisher }
-      (merge existing { active: false }))
-    (ok true)))
+(define-read-only (is-subscribed (user principal))
+  (match (map-get? subscriptions { subscriber: user })
+    s (and (<= stacks-block-height (get expires-at s)))
+    false))
 
-(define-read-only (is-subscribed (subscriber principal) (publisher principal))
-  (default-to false (get active (map-get? subscriptions { subscriber: subscriber, publisher: publisher }))))
+(define-read-only (get-subscription (user principal))
+  (map-get? subscriptions { subscriber: user }))
 
-(define-read-only (get-subscriber-count (publisher principal))
-  (default-to u0 (get count (map-get? subscriber-count { publisher: publisher }))))
+(define-read-only (get-tier-config (tier (string-ascii 20)))
+  (map-get? tier-config { tier: tier }))
