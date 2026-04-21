@@ -1,35 +1,43 @@
-# ProofLedger Notary
+# ProofLedger Multi-Party Notarization
 
-The `notary.clar` contract enables on-chain document notarization with witness signatures.
+The `notary.clar` contract enables independent witness signatures on document proofs.
 
-## Notarize a Document
+## Initiate Notarization
 
 ```clarity
-(contract-call? .notary notarize
-  0x<sha256-hash>
-  "Purchase agreement between Alice and Bob")
+(contract-call? .notary initiate-notarization
+  0x<document-hash>
+  "Service Agreement Q2 2026")
 ```
 
-## Add Witness Signatures
+## Witness Signs
+
+Any wallet (not the initiator) can add their witness signature:
 
 ```clarity
-(contract-call? .notary add-witness
-  0x<sha256-hash>
-  "I was present and confirm this agreement")
+(contract-call? .notary witness-sign
+  0x<document-hash>
+  "I confirm this document was reviewed and approved")
 ```
 
-## Verify Notarization
+## Finalize
+
+Once enough witnesses have signed, the initiator finalizes:
 
 ```clarity
-(contract-call? .notary is-notarized 0x<hash>)
-;; Returns: bool
+(contract-call? .notary finalize 0x<hash>)
+```
 
+## Read Status
+
+```clarity
 (contract-call? .notary get-notarization 0x<hash>)
-;; Returns: { notary, notarized-at, description, witness-count }
+;; Returns: { initiator, title, witness-count, finalized }
+
+(contract-call? .notary is-finalized 0x<hash>)  ;; bool
 ```
 
 ## Use Cases
-- Legal contracts with multiple signatories
-- Real estate transaction records
-- Business agreement notarization
-- Academic degree verification with institutional witness
+- Legal contracts requiring independent witnesses
+- Property deed transfers with multiple parties
+- Academic credential verification with faculty witnesses
