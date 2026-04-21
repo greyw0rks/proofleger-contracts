@@ -1,37 +1,42 @@
 ;; badges.clar
-;; ProofLedger Community Badge System
-;; Anyone can create and issue badges to any wallet
+;; ProofLedger Achievement Badges
+;; Soulbound badges awarded for protocol milestones
 
-(define-map badge-definitions
-  { id: (string-ascii 50) }
-  { creator: principal, name: (string-ascii 100), description: (string-ascii 200), created-at: uint })
+(define-map badge-types
+  { badge-id: (string-ascii 50) }
+  { name: (string-ascii 100), description: (string-ascii 200),
+    required-score: uint, created-at: uint })
 
-(define-map issued-badges
-  { recipient: principal, badge-id: (string-ascii 50), issuer: principal }
-  { issued-at: uint })
+(define-map earned-badges
+  { holder: principal, badge-id: (string-ascii 50) }
+  { earned-at: uint, score-at-earn: uint })
 
-(define-map badge-count
-  { recipient: principal }
-  { count: uint })
+(define-data-var badge-admin principal tx-sender)
 
-;; create-badge: define a new badge type
-;; Errors: u1 = badge ID already exists
-(define-public (create-badge (id (string-ascii 50)) (name (string-ascii 100)) (description (string-ascii 200)))
+;; register-badge: admin creates a new badge type
+(define-public (register-badge (badge-id (string-ascii 50)) (name (string-ascii 100))
+                                 (description (string-ascii 200)) (required-score uint))
   (begin
-    (asserts! (is-none (map-get? badge-definitions { id: id })) (err u1))
-    (map-set badge-definitions { id: id }
-      { creator: tx-sender, name: name, description: description, created-at: stacks-block-height })
+    (asserts! (is-eq tx-sender (var-get badge-admin)) (err u401))
+    (asserts! (is-none (map-get? badge-types { badge-id: badge-id })) (err u1))
+    (map-set badge-types { badge-id: badge-id }
+      { name: name, description: description,
+        required-score: required-score, created-at: stacks-block-height })
     (ok true)))
 
-;; issue-badge: award a badge to a recipient
-;; Errors: u2 = badge not found, u3 = already issued by this issuer
-(define-public (issue-badge (recipient principal) (badge-id (string-ascii 50)))
-  (let ((count (default-to u0 (get count (map-get? badge-count { recipient: recipient })))))
-    (asserts! (is-some (map-get? badge-definitions { id: badge-id })) (err u2))
-    (asserts! (is-none (map-get? issued-badges { recipient: recipient, badge-id: badge-id, issuer: tx-sender })) (err u3))
-    (map-set issued-badges { recipient: recipient, badge-id: badge-id, issuer: tx-sender } { issued-at: stacks-block-height })
-    (map-set badge-count { recipient: recipient } { count: (+ count u1) })
+;; award-badge: admin awards a badge to a wallet
+;; Errors: u401 = not admin, u2 = badge not found, u3 = already has badge
+(define-public (award-badge (holder principal) (badge-id (string-ascii 50)) (score uint))
+  (begin
+    (asserts! (is-eq tx-sender (var-get badge-admin)) (err u401))
+    (asserts! (is-some (map-get? badge-types { badge-id: badge-id })) (err u2))
+    (asserts! (is-none (map-get? earned-badges { holder: holder, badge-id: badge-id })) (err u3))
+    (map-set earned-badges { holder: holder, badge-id: badge-id }
+      { earned-at: stacks-block-height, score-at-earn: score })
     (ok true)))
 
-(define-read-only (has-badge (recipient principal) (badge-id (string-ascii 50)) (issuer principal))
-  (is-some (map-get? issued-badges { recipient: recipient, badge-id: badge-id, issuer: issuer })))
+(define-read-only (has-badge (holder principal) (badge-id (string-ascii 50)))
+  (is-some (map-get? earned-badges { holder: holder, badge-id: badge-id })))
+
+(define-read-only (get-badge-info (badge-id (string-ascii 50)))
+  (map-get? badge-types { badge-id: badge-id }))
