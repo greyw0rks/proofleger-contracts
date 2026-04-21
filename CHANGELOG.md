@@ -1,31 +1,31 @@
 # Changelog
 
-## [2.7.0] - 2026-04-21
+## [2.8.0] - 2026-04-22
 
 ### Added
 
-**New Contracts — Core Protocol:**
-- `reputation.clar` — on-chain reputation scoring from activity
-- `whitelist.clar` — approved institution management
-- `identity.clar` — self-sovereign identity with credential claims
-- `registry.clar` — protocol-wide contract address registry
-- `governance.clar` — community proposals and voting
+**New Contracts:**
+- `notary.clar` — multi-party notarization with witness signatures
+- `subscriptions.clar` — STX subscription tiers for pro features
+- `badges.clar` — soulbound achievement badge system
+- `messaging.clar` — wallet-to-wallet encrypted message anchoring
+- `escrow.clar` — document-gated STX escrow payments
 
 **Tests:**
-- reputation_test.ts — 3 test cases
-- whitelist_test.ts — 4 test cases
-- identity_test.ts — 3 test cases
-- governance_test.ts — 4 test cases
-- registry_test.ts — 3 test cases
+- notary_test.ts — 4 test cases
+- subscriptions_test.ts — 3 test cases
+- badges_test.ts — 4 test cases
+- messaging_test.ts — 3 test cases
+- escrow_test.ts — 4 test cases
 
 **Docs:**
-- governance.md, identity.md, whitelist.md
+- notary.md, escrow.md, subscriptions.md
+
+## [2.7.0] - 2026-04-21
+- reputation, whitelist, identity, registry, governance
 
 ## [2.6.0] - 2026-04-20
 - vouchers, challenges, auctions, oracle, staking
-
-## [2.5.0] - 2026-04-19
-- proof-of-attendance, research-grant, data-marketplace, consent-registry, token-gating
 
 ## [1.0.0] - 2026-03-08
 - Initial mainnet deployment
