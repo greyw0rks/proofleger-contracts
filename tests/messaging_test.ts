@@ -5,21 +5,24 @@ describe("messaging", () => {
   let simnet: any; let accounts: Map<string, string>;
   beforeEach(async () => { simnet = await initSimnet(); accounts = simnet.getAccounts(); });
   it("sends a message", () => {
-    const d = accounts.get("deployer")!;
-    const r = simnet.callPublicFn("messaging", "send-message", [Cl.stringAscii("Hello blockchain"), Cl.none()], d);
-    expect(r.result).toBeOk(Cl.uint(0));
-  });
-  it("sends message with reference hash", () => {
-    const d = accounts.get("deployer")!;
+    const d = accounts.get("deployer")!; const w1 = accounts.get("wallet_1")!;
     const hash = Cl.buffer(Buffer.from("a".repeat(64), "hex"));
-    const r = simnet.callPublicFn("messaging", "send-message", [Cl.stringAscii("See attached proof"), Cl.some(hash)], d);
-    expect(r.result).toBeOk(Cl.uint(0));
+    const r = simnet.callPublicFn("messaging", "send-message",
+      [Cl.standardPrincipal(w1), hash], d);
+    expect(r.result).toBeOk(Cl.uint(1));
   });
-  it("increments message count", () => {
+  it("recipient marks message as read", () => {
+    const d = accounts.get("deployer")!; const w1 = accounts.get("wallet_1")!;
+    const hash = Cl.buffer(Buffer.from("b".repeat(64), "hex"));
+    simnet.callPublicFn("messaging", "send-message", [Cl.standardPrincipal(w1), hash], d);
+    const r = simnet.callPublicFn("messaging", "mark-read", [Cl.uint(1)], w1);
+    expect(r.result).toBeOk(Cl.bool(true));
+  });
+  it("rejects self-messaging", () => {
     const d = accounts.get("deployer")!;
-    simnet.callPublicFn("messaging", "send-message", [Cl.stringAscii("msg1"), Cl.none()], d);
-    simnet.callPublicFn("messaging", "send-message", [Cl.stringAscii("msg2"), Cl.none()], d);
-    const r = simnet.callReadOnlyFn("messaging", "get-message-count", [Cl.standardPrincipal(d)], d);
-    expect(r.result).toBeUint(2);
+    const hash = Cl.buffer(Buffer.from("c".repeat(64), "hex"));
+    const r = simnet.callPublicFn("messaging", "send-message",
+      [Cl.standardPrincipal(d), hash], d);
+    expect(r.result).toBeErr(Cl.uint(1));
   });
 });
