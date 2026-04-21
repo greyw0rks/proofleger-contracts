@@ -1,27 +1,32 @@
 # ProofLedger Escrow
 
-The `escrow.clar` contract locks STX until a document is verified on-chain.
+The `escrow.clar` contract holds STX until a depositor releases or refunds.
 
-## Create an Escrow
+## Create Escrow
 
 ```clarity
 (contract-call? .escrow create-escrow
-  SP_RECIPIENT_ADDRESS
-  0x<required-document-hash>
-  u1000000)   ;; 1 STX
+  SP_BENEFICIARY
+  u5000000        ;; 5 STX
+  none)           ;; optional required proof hash
 ;; Returns: (ok escrow-id)
 ```
 
 ## Release Funds
 
-The recipient calls this after providing proof:
+```clarity
+;; Depositor releases to beneficiary
+(contract-call? .escrow release u1)
+```
+
+## Refund
 
 ```clarity
-(contract-call? .escrow release-escrow u1)
+;; Depositor reclaims if conditions unmet
+(contract-call? .escrow refund u1)
 ```
 
 ## Use Cases
-- Pay for credential verification
-- Freelance payment on delivery proof
-- Grant disbursement on milestone proof
-- Insurance claim on document submission
+- Freelance payment on work completion
+- Credential verification fee escrow
+- Document delivery milestone payments
