@@ -1,33 +1,34 @@
 # ProofLedger Access Control
 
-The `access-control.clar` contract manages role-based permissions.
+The `access-control.clar` contract manages role-based permissions across the protocol.
 
-## Roles
+## Built-in Roles
 
-| Role | Value | Description |
-|---|---|---|
-| ADMIN | u1 | Full protocol access |
-| ISSUER | u2 | Can issue credentials |
-| VERIFIER | u3 | Can verify and attest |
-| MODERATOR | u4 | Can flag content |
+| Role | Purpose |
+|---|---|
+| `admin` | Manage roles and system settings |
+| `issuer` | Issue credentials and certificates |
+| `verifier` | Perform verification operations |
+| `operator` | Run automated processes |
 
 ## Grant a Role
 
 ```clarity
-;; Owner only
-(contract-call? .access-control grant-role SP_ADDRESS u2)
+;; Admin only
+(contract-call? .access-control grant-role
+  SP_INSTITUTION_ADDRESS
+  "issuer")
 ```
 
-## Check Roles
+## Check a Role
 
 ```clarity
-(contract-call? .access-control has-role SP_ADDRESS u2)
-(contract-call? .access-control is-admin SP_ADDRESS)
-(contract-call? .access-control is-issuer SP_ADDRESS)
+(contract-call? .access-control has-role SP_ADDRESS "issuer")
+;; Returns: bool
 ```
 
-## Revoke
+## Revoke a Role
 
 ```clarity
-(contract-call? .access-control revoke-role SP_ADDRESS u2)
+(contract-call? .access-control revoke-role SP_ADDRESS "operator")
 ```
