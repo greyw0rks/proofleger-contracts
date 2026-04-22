@@ -1,33 +1,40 @@
-# ProofLedger Multi-Signature
+# ProofLedger Multi-Signature Wallets
 
-The `multisig.clar` contract requires M-of-N approvals before a document is considered approved.
+The `multisig.clar` contract enables m-of-n multi-signature approval for critical actions.
 
-## Create a 2-of-3 Config
+## Create a 2-of-3 Wallet
 
 ```clarity
-(contract-call? .multisig create-config
-  u2   ;; signatures required
-  (list SP_SIGNER_1 SP_SIGNER_2 SP_SIGNER_3))
-;; Returns: (ok config-id)
+(contract-call? .multisig create-multisig
+  (list SP_OWNER_1 SP_OWNER_2 SP_OWNER_3)
+  u2)   ;; 2 approvals required
+;; Returns: (ok wallet-id)
 ```
 
-## Approve a Document
+## Propose an Action
 
-Each signer calls:
 ```clarity
-(contract-call? .multisig approve u1 0x<sha256-hash>)
-;; Returns: (ok false) until threshold met
-;; Returns: (ok true) when threshold met
+(contract-call? .multisig propose
+  u1
+  "Deploy proofleger-v4 contract upgrade")
+;; Returns: (ok proposal-id)
+```
+
+## Approve a Proposal
+
+```clarity
+(contract-call? .multisig approve u1 u1)
+;; Each owner calls this separately
 ```
 
 ## Check Approval Status
 
 ```clarity
-(contract-call? .multisig is-approved u1 0x<hash>)
-;; Returns: bool
+(contract-call? .multisig is-approved u1 u1)
+;; Returns: true when approval-count >= threshold
 ```
 
 ## Use Cases
-- Board-approved document certification
-- Joint credential issuance
-- Multi-party contract notarization
+- Protocol upgrade approvals
+- Treasury disbursements
+- Credential issuer onboarding decisions
