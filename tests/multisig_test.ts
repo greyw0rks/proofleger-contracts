@@ -4,42 +4,42 @@ import { Cl } from "@stacks/transactions";
 describe("multisig", () => {
   let simnet: any; let accounts: Map<string, string>;
   beforeEach(async () => { simnet = await initSimnet(); accounts = simnet.getAccounts(); });
-  it("creates a 2-of-3 config", () => {
+  it("creates a 2-of-3 multisig wallet", () => {
     const d = accounts.get("deployer")!;
     const w1 = accounts.get("wallet_1")!;
     const w2 = accounts.get("wallet_2")!;
-    const r = simnet.callPublicFn("multisig", "create-config",
-      [Cl.uint(2), Cl.list([Cl.standardPrincipal(d), Cl.standardPrincipal(w1), Cl.standardPrincipal(w2)])], d);
+    const r = simnet.callPublicFn("multisig", "create-multisig",
+      [Cl.list([Cl.standardPrincipal(d),Cl.standardPrincipal(w1),Cl.standardPrincipal(w2)]),
+       Cl.uint(2)], d);
     expect(r.result).toBeOk(Cl.uint(1));
   });
-  it("approves a document hash", () => {
+  it("owner submits a proposal", () => {
     const d = accounts.get("deployer")!;
     const w1 = accounts.get("wallet_1")!;
-    const w2 = accounts.get("wallet_2")!;
-    const hash = Cl.buffer(Buffer.from("a".repeat(64), "hex"));
-    simnet.callPublicFn("multisig", "create-config",
-      [Cl.uint(2), Cl.list([Cl.standardPrincipal(d), Cl.standardPrincipal(w1), Cl.standardPrincipal(w2)])], d);
-    const r = simnet.callPublicFn("multisig", "approve", [Cl.uint(1), hash], d);
-    expect(r.result).toBeOk(Cl.bool(false));
+    simnet.callPublicFn("multisig","create-multisig",
+      [Cl.list([Cl.standardPrincipal(d),Cl.standardPrincipal(w1)]),Cl.uint(2)],d);
+    const r = simnet.callPublicFn("multisig","propose",
+      [Cl.uint(1),Cl.stringAscii("Deploy proofleger-v2")],d);
+    expect(r.result).toBeOk(Cl.uint(1));
   });
-  it("marks approved when threshold met", () => {
+  it("approval count increments correctly", () => {
     const d = accounts.get("deployer")!;
     const w1 = accounts.get("wallet_1")!;
-    const hash = Cl.buffer(Buffer.from("b".repeat(64), "hex"));
-    simnet.callPublicFn("multisig", "create-config",
-      [Cl.uint(2), Cl.list([Cl.standardPrincipal(d), Cl.standardPrincipal(w1)])], d);
-    simnet.callPublicFn("multisig", "approve", [Cl.uint(1), hash], d);
-    const r = simnet.callPublicFn("multisig", "approve", [Cl.uint(1), hash], w1);
-    expect(r.result).toBeOk(Cl.bool(true));
+    simnet.callPublicFn("multisig","create-multisig",
+      [Cl.list([Cl.standardPrincipal(d),Cl.standardPrincipal(w1)]),Cl.uint(2)],d);
+    simnet.callPublicFn("multisig","propose",[Cl.uint(1),Cl.stringAscii("action")],d);
+    const r = simnet.callPublicFn("multisig","approve",[Cl.uint(1),Cl.uint(1)],d);
+    expect(r.result).toBeOk(Cl.uint(1));
   });
-  it("rejects duplicate approval", () => {
+  it("is-approved true after threshold met", () => {
     const d = accounts.get("deployer")!;
     const w1 = accounts.get("wallet_1")!;
-    const hash = Cl.buffer(Buffer.from("c".repeat(64), "hex"));
-    simnet.callPublicFn("multisig", "create-config",
-      [Cl.uint(1), Cl.list([Cl.standardPrincipal(d), Cl.standardPrincipal(w1)])], d);
-    simnet.callPublicFn("multisig", "approve", [Cl.uint(1), hash], d);
-    const r = simnet.callPublicFn("multisig", "approve", [Cl.uint(1), hash], d);
-    expect(r.result).toBeErr(Cl.uint(5));
+    simnet.callPublicFn("multisig","create-multisig",
+      [Cl.list([Cl.standardPrincipal(d),Cl.standardPrincipal(w1)]),Cl.uint(1)],d);
+    simnet.callPublicFn("multisig","propose",[Cl.uint(1),Cl.stringAscii("go")],d);
+    simnet.callPublicFn("multisig","approve",[Cl.uint(1),Cl.uint(1)],d);
+    const r = simnet.callReadOnlyFn("multisig","is-approved",
+      [Cl.uint(1),Cl.uint(1)],d);
+    expect(r.result).toBeBool(true);
   });
 });
