@@ -1,55 +1,73 @@
 ;; multisig.clar
 ;; ProofLedger Multi-Signature Approval
-;; Require M-of-N signatures before a document is considered approved
+;; Require m-of-n signers to approve a transaction or action
 
 (define-map multisig-configs
-  { id: uint }
-  { creator: principal, required: uint, total-signers: uint, created-at: uint })
+  { wallet-id: uint }
+  { owners: (list 10 principal), threshold: uint,
+    created-at: uint, active: bool })
 
-(define-map multisig-signers
-  { config-id: uint, signer: principal }
-  { authorized: bool })
+(define-map proposals
+  { wallet-id: uint, proposal-id: uint }
+  { action: (string-ascii 200), proposed-by: principal,
+    proposed-at: uint, executed: bool,
+    approval-count: uint })
 
-(define-map multisig-approvals
-  { config-id: uint, hash: (buff 32) }
-  { approved-count: uint, approved: bool })
+(define-map approvals
+  { wallet-id: uint, proposal-id: uint, approver: principal }
+  { approved-at: uint })
 
-(define-map signer-approvals
-  { config-id: uint, hash: (buff 32), signer: principal }
-  { signed-at: uint })
+(define-map proposal-counts
+  { wallet-id: uint }
+  { count: uint })
 
-(define-data-var config-count uint u0)
+(define-data-var wallet-count uint u0)
 
-;; create-config: set up a new multisig configuration
-;; Errors: u1 = required must be positive, u2 = required > total
-(define-public (create-config (required uint) (signers (list 10 principal)))
-  (let ((id (+ (var-get config-count) u1))
-        (total (len signers)))
-    (asserts! (> required u0) (err u1))
-    (asserts! (<= required total) (err u2))
-    (map-set multisig-configs { id: id }
-      { creator: tx-sender, required: required,
-        total-signers: total, created-at: stacks-block-height })
-    (var-set config-count id)
+;; create-multisig: deploy a new m-of-n wallet
+;; Errors: u1 = threshold exceeds owner count, u2 = no owners
+(define-public (create-multisig (owners (list 10 principal)) (threshold uint))
+  (let ((n (len owners))
+        (id (+ (var-get wallet-count) u1)))
+    (asserts! (> n u0) (err u2))
+    (asserts! (<= threshold n) (err u1))
+    (map-set multisig-configs { wallet-id: id }
+      { owners: owners, threshold: threshold,
+        created-at: stacks-block-height, active: true })
+    (var-set wallet-count id)
     (ok id)))
 
-;; approve: signer approves a document hash
-;; Errors: u3 = config not found, u4 = not authorized, u5 = already signed
-(define-public (approve (config-id uint) (hash (buff 32)))
-  (let ((config (unwrap! (map-get? multisig-configs { id: config-id }) (err u3)))
-        (existing (map-get? multisig-approvals { config-id: config-id, hash: hash }))
-        (count (default-to u0 (get approved-count existing))))
-    (asserts! (is-none (map-get? signer-approvals { config-id: config-id, hash: hash, signer: tx-sender })) (err u5))
-    (map-set signer-approvals { config-id: config-id, hash: hash, signer: tx-sender }
-      { signed-at: stacks-block-height })
-    (let ((new-count (+ count u1))
-          (is-approved (>= (+ count u1) (get required config))))
-      (map-set multisig-approvals { config-id: config-id, hash: hash }
-        { approved-count: new-count, approved: is-approved })
-      (ok is-approved))))
+;; propose: owner submits a proposal
+;; Errors: u3 = wallet not found, u4 = not an owner
+(define-public (propose (wallet-id uint) (action (string-ascii 200)))
+  (let ((config (unwrap! (map-get? multisig-configs { wallet-id: wallet-id }) (err u3)))
+        (count  (default-to u0 (get count (map-get? proposal-counts { wallet-id: wallet-id })))))
+    (asserts! (is-some (index-of (get owners config) tx-sender)) (err u4))
+    (let ((pid (+ count u1)))
+      (map-set proposals { wallet-id: wallet-id, proposal-id: pid }
+        { action: action, proposed-by: tx-sender,
+          proposed-at: stacks-block-height, executed: false, approval-count: u0 })
+      (map-set proposal-counts { wallet-id: wallet-id } { count: pid })
+      (ok pid))))
 
-(define-read-only (is-approved (config-id uint) (hash (buff 32)))
-  (default-to false (get approved (map-get? multisig-approvals { config-id: config-id, hash: hash }))))
+;; approve: owner approves a proposal
+;; Errors: u5 = proposal not found, u6 = already approved
+(define-public (approve (wallet-id uint) (proposal-id uint))
+  (let ((config (unwrap! (map-get? multisig-configs { wallet-id: wallet-id }) (err u3)))
+        (prop   (unwrap! (map-get? proposals { wallet-id: wallet-id, proposal-id: proposal-id }) (err u5))))
+    (asserts! (is-some (index-of (get owners config) tx-sender)) (err u4))
+    (asserts! (is-none (map-get? approvals { wallet-id: wallet-id, proposal-id: proposal-id, approver: tx-sender })) (err u6))
+    (map-set approvals { wallet-id: wallet-id, proposal-id: proposal-id, approver: tx-sender }
+      { approved-at: stacks-block-height })
+    (map-set proposals { wallet-id: wallet-id, proposal-id: proposal-id }
+      (merge prop { approval-count: (+ (get approval-count prop) u1) }))
+    (ok (+ (get approval-count prop) u1))))
 
-(define-read-only (get-approval-count (config-id uint) (hash (buff 32)))
-  (default-to u0 (get approved-count (map-get? multisig-approvals { config-id: config-id, hash: hash }))))
+(define-read-only (is-approved (wallet-id uint) (proposal-id uint))
+  (match (map-get? proposals { wallet-id: wallet-id, proposal-id: proposal-id })
+    p (match (map-get? multisig-configs { wallet-id: wallet-id })
+        c (>= (get approval-count p) (get threshold c))
+        false)
+    false))
+
+(define-read-only (get-proposal (wallet-id uint) (proposal-id uint))
+  (map-get? proposals { wallet-id: wallet-id, proposal-id: proposal-id }))
