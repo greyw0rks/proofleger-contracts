@@ -1,38 +1,57 @@
 ;; attestation-v2.clar
-;; ProofLedger Enhanced Attestation
-;; Attestations with credibility weight based on attestor reputation
+;; ProofLedger Attestation v2
+;; Enhanced attestations with typed metadata, expiry, and revocation
 
-(define-map attestations-v2
-  { hash: (buff 32), attestor: principal }
-  { attested-at: uint, credential-type: (string-ascii 50),
-    weight: uint, comment: (string-ascii 200) })
+(define-map attestations
+  { hash: (buff 32), attester: principal }
+  { attest-type: (string-ascii 50),
+    metadata: (string-ascii 200),
+    attested-at: uint,
+    expires-at: (optional uint),
+    revoked: bool,
+    weight: uint })
 
-(define-map attestation-totals
+(define-map hash-attestation-counts
   { hash: (buff 32) }
-  { count: uint, total-weight: uint })
+  { count: uint })
 
-;; attest-with-weight: attest with a credibility weight (1-10)
-;; Errors: u1 = already attested, u2 = invalid weight, u3 = self-attest
-(define-public (attest-with-weight (hash (buff 32)) (credential-type (string-ascii 50))
-                                    (weight uint) (comment (string-ascii 200)))
-  (let ((totals (default-to { count: u0, total-weight: u0 }
-          (map-get? attestation-totals { hash: hash }))))
-    (asserts! (is-none (map-get? attestations-v2 { hash: hash, attestor: tx-sender })) (err u1))
-    (asserts! (and (>= weight u1) (<= weight u10)) (err u2))
-    (map-set attestations-v2 { hash: hash, attestor: tx-sender }
-      { attested-at: stacks-block-height, credential-type: credential-type,
-        weight: weight, comment: comment })
-    (map-set attestation-totals { hash: hash }
-      { count: (+ (get count totals) u1),
-        total-weight: (+ (get total-weight totals) weight) })
+;; attest: create a typed attestation for a document
+;; Errors: u1 = already attested by this address
+(define-public (attest (hash (buff 32)) (attest-type (string-ascii 50))
+                         (metadata (string-ascii 200))
+                         (expires-in (optional uint)) (weight uint))
+  (begin
+    (asserts! (is-none (map-get? attestations { hash: hash, attester: tx-sender })) (err u1))
+    (map-set attestations { hash: hash, attester: tx-sender }
+      { attest-type: attest-type, metadata: metadata,
+        attested-at: stacks-block-height,
+        expires-at: (match expires-in
+          dur (some (+ stacks-block-height dur))
+          none),
+        revoked: false,
+        weight: (if (> weight u0) weight u1) })
+    (let ((existing (default-to u0 (get count (map-get? hash-attestation-counts { hash: hash })))))
+      (map-set hash-attestation-counts { hash: hash } { count: (+ existing u1) }))
     (ok true)))
 
-(define-read-only (get-attestation (hash (buff 32)) (attestor principal))
-  (map-get? attestations-v2 { hash: hash, attestor: attestor }))
+;; revoke: attester withdraws their attestation
+;; Errors: u2 = not found, u3 = not attester
+(define-public (revoke (hash (buff 32)))
+  (let ((a (unwrap! (map-get? attestations { hash: hash, attester: tx-sender }) (err u2))))
+    (map-set attestations { hash: hash, attester: tx-sender }
+      (merge a { revoked: true }))
+    (ok true)))
 
-(define-read-only (get-credibility-score (hash (buff 32)))
-  (let ((totals (default-to { count: u0, total-weight: u0 }
-          (map-get? attestation-totals { hash: hash }))))
-    (if (> (get count totals) u0)
-      (/ (get total-weight totals) (get count totals))
-      u0)))
+(define-read-only (get-attestation (hash (buff 32)) (attester principal))
+  (map-get? attestations { hash: hash, attester: attester }))
+
+(define-read-only (is-valid-attestation (hash (buff 32)) (attester principal))
+  (match (map-get? attestations { hash: hash, attester: attester })
+    a (and (not (get revoked a))
+           (match (get expires-at a)
+             exp (<= stacks-block-height exp)
+             true))
+    false))
+
+(define-read-only (get-attestation-count (hash (buff 32)))
+  (default-to u0 (get count (map-get? hash-attestation-counts { hash: hash }))))
