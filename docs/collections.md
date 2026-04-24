@@ -1,33 +1,37 @@
 # ProofLedger Collections
 
+The `collections.clar` contract lets wallets group related documents.
+
 ## Create a Collection
 
 ```clarity
 (contract-call? .collections create-collection
-  "Research Papers 2026"
-  "My published research")
+  "Academic Credentials 2026"
+  "All university degrees and certifications"
+  true)   ;; public
+;; Returns: (ok collection-id)
 ```
 
-## Add Documents
+## Add a Document
 
 ```clarity
-(contract-call? .collections add-to-collection
-  "Research Papers 2026"
-  0x<sha256-hash>)
+(contract-call? .collections add-doc
+  u1          ;; collection ID
+  0x<hash>)   ;; document hash
+;; Returns: (ok index)
 ```
 
-## Read a Collection
+## Read Collection
 
 ```clarity
-(contract-call? .collections get-collection tx-sender "Research Papers 2026")
-;; Returns: { created-at, count, description }
+(contract-call? .collections get-collection u1)
+;; Returns: { owner, name, doc-count, public }
 
-(contract-call? .collections get-item tx-sender "Research Papers 2026" u0)
-;; Returns first document hash in collection
+(contract-call? .collections get-doc-at u1 u0)
+;; Returns: { hash, added-at }
 ```
 
 ## Use Cases
-- Academic portfolios
-- Professional credential bundles
-- Art collections
-- Project documentation sets
+- Aggregate all credentials from one institution
+- Curate a professional portfolio
+- Group documents for a specific job application
