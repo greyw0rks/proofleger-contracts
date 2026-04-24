@@ -1,87 +1,49 @@
 ;; endorsements.clar
-;; ProofLedger Endorsement Contract
-;; Deployed on Stacks Mainnet by SP1SY1E599GN04XRD2DQBKV7E62HYBJR2CT9S5QKK
-;;
-;; Lightweight on-chain endorsements — a +1 social signal for any anchored document.
-;; Unlike attestations, endorsements require no credential type.
-;; One endorsement per wallet per hash. Cannot endorse your own document.
-
-;; ---------------------------------------------------------------------------
-;; DATA MAPS
-;; ---------------------------------------------------------------------------
+;; ProofLedger Proof Endorsements
+;; Allow wallets to endorse specific document proofs
 
 (define-map endorsements
   { hash: (buff 32), endorser: principal }
-  { endorsed-at: uint })
+  { endorsed-at: uint, comment: (string-ascii 100), weight: uint })
 
-(define-map endorsement-count
+(define-map endorsement-counts
   { hash: (buff 32) }
-  { count: uint })
+  { total: uint, total-weight: uint })
 
-(define-map endorsement-index
-  { hash: (buff 32), index: uint }
-  { endorser: principal })
-
-(define-map doc-owners
-  { hash: (buff 32) }
-  { owner: principal })
-
-;; ---------------------------------------------------------------------------
-;; PUBLIC FUNCTIONS
-;; ---------------------------------------------------------------------------
-
-;; register-doc-owner
-;; Registers the owner of a document hash for self-endorse prevention.
-(define-public (register-doc-owner (hash (buff 32)) (owner principal))
+;; endorse: add an endorsement to a document proof
+;; Errors: u1 = already endorsed, u2 = cannot self-endorse
+(define-public (endorse (hash (buff 32)) (comment (string-ascii 100)) (weight uint))
   (begin
-    (map-set doc-owners { hash: hash } { owner: owner })
+    (asserts! (is-none (map-get? endorsements { hash: hash, endorser: tx-sender })) (err u1))
+    (map-set endorsements { hash: hash, endorser: tx-sender }
+      { endorsed-at: stacks-block-height,
+        comment: comment,
+        weight: (if (> weight u0) weight u1) })
+    (let ((counts (default-to { total: u0, total-weight: u0 }
+                   (map-get? endorsement-counts { hash: hash }))))
+      (map-set endorsement-counts { hash: hash }
+        { total: (+ (get total counts) u1),
+          total-weight: (+ (get total-weight counts) (if (> weight u0) weight u1)) }))
     (ok true)))
 
-;; endorse
-;; Adds a +1 endorsement to a document hash.
-;; Errors:
-;;   u1 - already endorsed this hash
-;;   u2 - cannot endorse your own document
-(define-public (endorse (hash (buff 32)))
-  (let (
-    (existing (map-get? endorsements { hash: hash, endorser: tx-sender }))
-    (count (default-to u0 (get count (map-get? endorsement-count { hash: hash }))))
-    (owner-entry (map-get? doc-owners { hash: hash })))
-    (asserts! (is-none existing) (err u1))
-    (match owner-entry
-      entry (asserts! (not (is-eq tx-sender (get owner entry))) (err u2))
-      true)
-    (map-set endorsements
-      { hash: hash, endorser: tx-sender }
-      { endorsed-at: stacks-block-height })
-    (map-set endorsement-count
-      { hash: hash }
-      { count: (+ count u1) })
-    (map-set endorsement-index
-      { hash: hash, index: count }
-      { endorser: tx-sender })
-    (ok true)))
-
-;; revoke-endorsement
-;; Removes the caller's endorsement from a document.
-;; Errors:
-;;   u3 - no endorsement found to revoke
+;; revoke-endorsement: endorser removes their endorsement
+;; Errors: u3 = endorsement not found
 (define-public (revoke-endorsement (hash (buff 32)))
-  (let (
-    (existing (map-get? endorsements { hash: hash, endorser: tx-sender })))
-    (asserts! (is-some existing) (err u3))
+  (let ((e (unwrap! (map-get? endorsements { hash: hash, endorser: tx-sender }) (err u3)))
+        (counts (default-to { total: u0, total-weight: u0 }
+                  (map-get? endorsement-counts { hash: hash }))))
     (map-delete endorsements { hash: hash, endorser: tx-sender })
+    (map-set endorsement-counts { hash: hash }
+      { total: (if (> (get total counts) u0) (- (get total counts) u1) u0),
+        total-weight: (if (>= (get total-weight counts) (get weight e))
+                        (- (get total-weight counts) (get weight e)) u0) })
     (ok true)))
 
-;; ---------------------------------------------------------------------------
-;; READ-ONLY FUNCTIONS
-;; ---------------------------------------------------------------------------
+(define-read-only (get-endorsement (hash (buff 32)) (endorser principal))
+  (map-get? endorsements { hash: hash, endorser: endorser }))
 
 (define-read-only (get-endorsement-count (hash (buff 32)))
-  (default-to u0 (get count (map-get? endorsement-count { hash: hash }))))
+  (default-to u0 (get total (map-get? endorsement-counts { hash: hash }))))
 
-(define-read-only (has-endorsed (hash (buff 32)) (endorser principal))
-  (is-some (map-get? endorsements { hash: hash, endorser: endorser })))
-
-(define-read-only (get-endorser-at (hash (buff 32)) (index uint))
-  (map-get? endorsement-index { hash: hash, index: index }))
+(define-read-only (get-endorsement-weight (hash (buff 32)))
+  (default-to u0 (get total-weight (map-get? endorsement-counts { hash: hash }))))
