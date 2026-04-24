@@ -1,41 +1,50 @@
+;; achievements.clar
+;; ProofLedger Soulbound Achievements
+;; Non-transferable NFTs awarded for protocol milestones
+
 (define-non-fungible-token achievement uint)
-(define-data-var token-counter uint u0)
+(define-data-var token-count uint u0)
 
-(define-map token-metadata { token-id: uint } { hash: (buff 32), achievement-type: (string-ascii 50), title: (string-ascii 100), minted-at: uint, owner: principal })
-(define-map hash-to-token { hash: (buff 32), owner: principal } { token-id: uint })
-(define-map owner-tokens { owner: principal, index: uint } { token-id: uint })
-(define-map owner-token-count { owner: principal } { count: uint })
+(define-map achievement-data
+  { token-id: uint }
+  { holder: principal, achievement-type: (string-ascii 50),
+    document-hash: (buff 32), earned-at: uint })
 
-(define-public (mint (hash (buff 32)) (achievement-type (string-ascii 50)) (title (string-ascii 100)))
-  (let ((existing (map-get? hash-to-token { hash: hash, owner: tx-sender }))
-        (token-id (+ (var-get token-counter) u1))
-        (count (default-to u0 (get count (map-get? owner-token-count { owner: tx-sender })))))
-    (asserts! (is-none existing) (err u1))
-    (try! (nft-mint? achievement token-id tx-sender))
-    (var-set token-counter token-id)
-    (map-set token-metadata { token-id: token-id } { hash: hash, achievement-type: achievement-type, title: title, minted-at: block-height, owner: tx-sender })
-    (map-set hash-to-token { hash: hash, owner: tx-sender } { token-id: token-id })
-    (map-set owner-tokens { owner: tx-sender, index: count } { token-id: token-id })
-    (map-set owner-token-count { owner: tx-sender } { count: (+ count u1) })
-    (ok token-id)))
+(define-map holder-achievements
+  { holder: principal, achievement-type: (string-ascii 50) }
+  { token-id: uint })
 
-(define-read-only (get-token-by-hash (hash (buff 32)) (owner principal))
-  (map-get? hash-to-token { hash: hash, owner: owner }))
+(define-data-var contract-owner principal tx-sender)
 
-(define-read-only (get-token-metadata (token-id uint))
-  (map-get? token-metadata { token-id: token-id }))
+;; mint: owner mints soulbound achievement for a holder
+;; Errors: u401 = not owner, u1 = already has this achievement type
+(define-public (mint (holder principal) (achievement-type (string-ascii 50))
+                       (document-hash (buff 32)))
+  (begin
+    (asserts! (is-eq tx-sender (var-get contract-owner)) (err u401))
+    (asserts! (is-none (map-get? holder-achievements
+      { holder: holder, achievement-type: achievement-type })) (err u1))
+    (let ((id (+ (var-get token-count) u1)))
+      (try! (nft-mint? achievement id holder))
+      (var-set token-count id)
+      (map-set achievement-data { token-id: id }
+        { holder: holder, achievement-type: achievement-type,
+          document-hash: document-hash, earned-at: stacks-block-height })
+      (map-set holder-achievements { holder: holder, achievement-type: achievement-type }
+        { token-id: id })
+      (ok id))))
 
-(define-read-only (get-owner-token-count (owner principal))
-  (default-to u0 (get count (map-get? owner-token-count { owner: owner }))))
-
-(define-read-only (get-owner-token-at (owner principal) (index uint))
-  (map-get? owner-tokens { owner: owner, index: index }))
-
-(define-read-only (get-last-token-id)
-  (ok (var-get token-counter)))
-
-(define-read-only (get-token-uri (token-id uint))
-  (ok none))
+;; transfer blocked — soulbound
+(define-public (transfer (token-id uint) (sender principal) (recipient principal))
+  (err u403))
 
 (define-read-only (get-owner (token-id uint))
-  (ok (nft-get-owner? achievement token-id)))
+  (nft-get-owner? achievement token-id))
+
+(define-read-only (has-achievement (holder principal) (achievement-type (string-ascii 50)))
+  (is-some (map-get? holder-achievements { holder: holder, achievement-type: achievement-type })))
+
+(define-read-only (get-achievement-data (token-id uint))
+  (map-get? achievement-data { token-id: token-id }))
+
+(define-read-only (get-total-minted) (var-get token-count))
