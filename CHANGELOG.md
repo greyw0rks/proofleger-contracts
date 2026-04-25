@@ -1,28 +1,27 @@
 # Changelog
 
-## [3.0.0] - 2026-04-24
+## [2.11.0] - 2026-04-25
 
 ### Added
 
-**New Contracts — Core Identity Layer:**
-- `achievements.clar` — soulbound milestone NFTs (non-transferable)
-- `endorsements.clar` — peer endorsement system with weight and revocation
-- `profiles.clar` — on-chain wallet profiles with proof activity stats
-- `revocations.clar` — credential revocation with challenge mechanism
-- `collections.clar` — group documents into named shareable collections
+**New Contracts — Protocol Infrastructure:**
+- `timelock.clar` — queue/execute/cancel delayed protocol actions
+- `oracle.clar` — on-chain data feed registry with authorized reporters
+- `fee-registry.clar` — configurable per-action protocol fee collection
+- `proof-nft.clar` — SIP-009 NFT certificates minted at anchor time
 
 **Tests:**
-- achievements_test.ts — 4 test cases
-- endorsements_test.ts — 4 test cases
-- profiles_test.ts — 4 test cases
-- revocations_test.ts — 4 test cases
-- collections_test.ts — 4 test cases
+- timelock_test.ts — 4 test cases
+- oracle_test.ts — 4 test cases
+- fee_registry_test.ts — 4 test cases
+- proof_nft_test.ts — 4 test cases
 
 **Docs:**
-- achievements.md, collections.md, revocations.md
+- proof-nft.md — NFT minting guide
+- timelock.md — delayed execution guide
 
-### Changed
-- Version bump to 3.0.0 — core identity layer now complete
+## [2.10.0] - 2026-04-24
+- slashing, rewards distributor, challenge-response, credential expiry
 
 ## [2.9.0] - 2026-04-23
 - multisig, access-control, dispatcher, snapshots, attestation-v2
