@@ -1,43 +1,60 @@
 ;; oracle.clar
 ;; ProofLedger On-Chain Oracle
-;; Authorized oracle feeds for contract data dependencies
+;; Store and retrieve verified data feeds (e.g. per-type fees, block timestamps)
 
-(define-map oracle-data
-  { feed: (string-ascii 50) }
-  { value: uint, updated-at: uint, updater: principal,
+(define-map feeds
+  { feed-key: (string-ascii 50) }
+  { value: uint,
+    reporter: principal,
+    updated-at: uint,
+    round: uint,
     description: (string-ascii 100) })
 
-(define-map authorized-updaters
-  { updater: principal }
-  { active: bool, added-at: uint })
+(define-map authorized-reporters
+  { reporter: principal }
+  { authorized-at: uint, active: bool })
 
-(define-data-var oracle-owner principal tx-sender)
+(define-data-var oracle-admin principal tx-sender)
+(define-data-var stale-threshold uint u144) ;; blocks before a feed is considered stale
 
-;; authorize-updater: owner grants oracle update rights
-(define-public (authorize-updater (updater principal))
+;; Seed default feeds
+(map-set feeds { feed-key: "anchor-fee-diploma"       } { value: u1000, reporter: tx-sender, updated-at: u0, round: u1, description: "Diploma anchor fee in uSTX" })
+(map-set feeds { feed-key: "anchor-fee-certificate"   } { value: u800,  reporter: tx-sender, updated-at: u0, round: u1, description: "Certificate anchor fee in uSTX" })
+(map-set feeds { feed-key: "anchor-fee-research"      } { value: u1200, reporter: tx-sender, updated-at: u0, round: u1, description: "Research anchor fee in uSTX" })
+
+;; authorize-reporter: admin adds a trusted data reporter
+(define-public (authorize-reporter (reporter principal))
   (begin
-    (asserts! (is-eq tx-sender (var-get oracle-owner)) (err u401))
-    (map-set authorized-updaters { updater: updater } { active: true, added-at: stacks-block-height })
+    (asserts! (is-eq tx-sender (var-get oracle-admin)) (err u401))
+    (map-set authorized-reporters { reporter: reporter }
+      { authorized-at: stacks-block-height, active: true })
     (ok true)))
 
-;; update-feed: authorized updater pushes a new value
-;; Errors: u403 = not authorized, u1 = invalid value
-(define-public (update-feed (feed (string-ascii 50)) (value uint) (description (string-ascii 100)))
-  (begin
-    (asserts!
-      (or (is-eq tx-sender (var-get oracle-owner))
-          (default-to false (get active (map-get? authorized-updaters { updater: tx-sender }))))
-      (err u403))
-    (map-set oracle-data { feed: feed }
-      { value: value, updated-at: stacks-block-height,
-        updater: tx-sender, description: description })
-    (ok true)))
+;; update-feed: authorized reporter submits a new value
+;; Errors: u402 = not authorized reporter
+(define-public (update-feed (feed-key (string-ascii 50)) (value uint))
+  (let ((auth (unwrap! (map-get? authorized-reporters { reporter: tx-sender }) (err u402))))
+    (asserts! (get active auth) (err u402))
+    (let ((current (default-to
+            { value: u0, reporter: tx-sender, updated-at: u0, round: u0, description: "" }
+            (map-get? feeds { feed-key: feed-key }))))
+      (map-set feeds { feed-key: feed-key }
+        { value:       value,
+          reporter:    tx-sender,
+          updated-at:  stacks-block-height,
+          round:       (+ (get round current) u1),
+          description: (get description current) })
+      (ok value))))
 
-(define-read-only (get-feed (feed (string-ascii 50)))
-  (map-get? oracle-data { feed: feed }))
+(define-read-only (get-feed (feed-key (string-ascii 50)))
+  (map-get? feeds { feed-key: feed-key }))
 
-(define-read-only (get-feed-value (feed (string-ascii 50)))
-  (get value (map-get? oracle-data { feed: feed })))
+(define-read-only (get-feed-value (feed-key (string-ascii 50)))
+  (match (map-get? feeds { feed-key: feed-key })
+    f (some (get value f))
+    none))
 
-(define-read-only (is-authorized (updater principal))
-  (default-to false (get active (map-get? authorized-updaters { updater: updater }))))
+(define-read-only (is-feed-fresh (feed-key (string-ascii 50)))
+  (match (map-get? feeds { feed-key: feed-key })
+    f (<= (- stacks-block-height (get updated-at f)) (var-get stale-threshold))
+    false))
