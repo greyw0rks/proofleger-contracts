@@ -1,34 +1,37 @@
-# ProofLedger Issuer Whitelist
+# ProofLedger Whitelist
 
-The `whitelist.clar` contract manages approved credential-issuing institutions.
+The `whitelist.clar` contract provides an optional permission layer.
+By default the whitelist is **disabled** — anyone can anchor.
+When enabled, only explicitly added addresses may submit.
 
-## Institution: Request Approval
-
-```clarity
-(contract-call? .whitelist request-approval
-  "University of Lagos"
-  "university")
-```
-
-## Admin: Approve Issuer
+## Enable / Disable
 
 ```clarity
-(contract-call? .whitelist approve-issuer
-  SP_INSTITUTION_ADDRESS
-  "University of Lagos"
-  "university")
+;; Enable (admin only)
+(contract-call? .whitelist set-enabled true)
+
+;; Disable (open access)
+(contract-call? .whitelist set-enabled false)
 ```
 
-## Check Approval Status
+## Add / Remove Addresses
 
 ```clarity
-(contract-call? .whitelist is-approved SP_ADDRESS)
-;; Returns: bool
-
-(contract-call? .whitelist get-issuer-info SP_ADDRESS)
-;; Returns: { name, category, approved-at, active }
+(contract-call? .whitelist add SP_MIT_ADDRESS "MIT issuer wallet")
+(contract-call? .whitelist remove SP_MIT_ADDRESS)
 ```
 
-## Categories
+## Check Access
 
-`university`, `professional-body`, `government`, `employer`, `ngo`, `bootcamp`, `other`
+```clarity
+(contract-call? .whitelist is-allowed SP_ADDRESS)
+;; true when disabled, or address is active in list
+```
+
+## Integration
+
+Anchor contracts check `is-allowed` before processing:
+
+```clarity
+(asserts! (contract-call? .whitelist is-allowed tx-sender) (err u403))
+```
