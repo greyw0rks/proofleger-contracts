@@ -1,38 +1,38 @@
 # ProofLedger Governance
 
-The `governance.clar` contract enables community-driven protocol upgrades.
+The `governance.clar` contract enables stake-weighted protocol governance.
+Any principal may submit proposals; only stakers carry voting weight.
 
 ## Submit a Proposal
 
 ```clarity
 (contract-call? .governance propose
-  "Reduce verification fee to 0.0005 STX"
-  "Current fee of 0.001 STX is too high for mobile users"
-  "update-fee u500")
+  "Enable issuer whitelist"
+  "Require verified issuer status to anchor credentials")
 ;; Returns: (ok proposal-id)
 ```
 
 ## Cast a Vote
 
+Weight comes from `staking.clar`. Retrieve it then vote:
+
 ```clarity
-(contract-call? .governance vote u1 true)   ;; vote for
-(contract-call? .governance vote u1 false)  ;; vote against
+(let ((weight (contract-call? .staking get-weight tx-sender)))
+  (contract-call? .governance vote u1 weight true))
+;; Returns: (ok true)
 ```
 
-## Read Proposal
+## Proposal Lifecycle
+
+```
+propose → voting window (288 blocks ~2 days) → finalize
+```
+
+A proposal passes if `votes-for / total >= 60%`.
+
+## Read Proposal State
 
 ```clarity
 (contract-call? .governance get-proposal u1)
-;; Returns: { proposer, title, votes-for, votes-against, end-block, passed }
+;; { title, votes-for, votes-against, closes-at, passed, executed }
 ```
-
-## Check Quorum
-
-```clarity
-(contract-call? .governance has-quorum u1)
-;; Returns: bool (true if votes >= quorum threshold)
-```
-
-## Voting Period
-
-Default: ~1440 blocks (~10 days on Stacks)
