@@ -1,30 +1,29 @@
 # Changelog
 
-## [2.15.0] - 2026-04-29
+## [2.16.0] - 2026-04-30
 
 ### Added
 
-**New Contracts — Advanced Identity & Cross-Chain:**
-- `recovery.clar` — social recovery: guardians restore lost wallet access
-- `credential-vault.clar` — encrypted credential storage with selective access grants
-- `proof-mirror.clar` — record and confirm cross-chain Stacks↔Celo proof mirroring
-- `staking.clar` — stake STX to earn governance weight with lock period
+**New Contracts — Protocol Completion:**
+- `governance.clar` — stake-weighted proposals with 60% pass threshold
+- `payment-splitter.clar` — proportional STX distribution across recipients
+- `zkp-verifier.clar` — on-chain registry of ZK proof verification attestations
+- `proofleger-v2.clar` — upgraded anchor contract with doc-type, verify, and pause
 
 **Tests:**
-- recovery_test.ts — 4 test cases
-- credential_vault_test.ts — 4 test cases
-- proof_mirror_test.ts — 4 test cases
-- staking_test.ts — 4 test cases
+- governance_test.ts — 4 test cases
+- payment_splitter_test.ts — 4 test cases
+- zkp_verifier_test.ts — 4 test cases
+- proofleger_v2_test.ts — 4 test cases
 
 **Docs:**
-- staking.md — staking guide
-- credential-vault.md — encrypted vault usage guide
+- governance.md — proposal and voting guide
+
+## [2.15.0] - 2026-04-29
+- recovery, credential-vault, proof-mirror, staking
 
 ## [2.14.0] - 2026-04-28
 - whitelist, proof-router, audit-trail, genesis
-
-## [2.13.0] - 2026-04-27
-- reputation, delegation, verification-log, subscription-v2
 
 ## [1.0.0] - 2026-03-08
 - Initial mainnet deployment
