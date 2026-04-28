@@ -1,42 +1,70 @@
 ;; cross-chain-bridge.clar
-;; ProofLedger Cross-Chain Bridge Records
-;; Track when proofs are anchored on multiple chains
+;; ProofLedger Cross-Chain Bridge Registry
+;; Track bridge relay operators and their message relay history
 
-(define-map bridge-records
-  { hash: (buff 32), source-chain: (string-ascii 20) }
-  { anchor-chain: (string-ascii 20), anchor-address: (string-ascii 100),
-    bridged-at: uint, bridger: principal, confirmed: bool })
+(define-map relay-operators
+  { operator: principal }
+  { registered-at: uint,
+    active:        bool,
+    relay-count:   uint,
+    label:         (string-ascii 60) })
 
-(define-map hash-chains
-  { hash: (buff 32) }
-  { chains: (list 5 (string-ascii 20)) })
+(define-map relay-messages
+  { message-id: uint }
+  { operator:    principal,
+    source-chain: (string-ascii 20),
+    dest-chain:   (string-ascii 20),
+    payload-hash: (buff 32),
+    relayed-at:   uint,
+    confirmed:    bool })
 
-(define-data-var total-bridges uint u0)
+(define-data-var bridge-admin  principal tx-sender)
+(define-data-var message-count uint u0)
 
-;; record-bridge: log that a hash was anchored on another chain
-(define-public (record-bridge (hash (buff 32)) (source-chain (string-ascii 20))
-                                (anchor-chain (string-ascii 20))
-                                (anchor-address (string-ascii 100)))
+;; register-operator: admin registers a trusted relay operator
+;; Errors: u401 = not admin
+(define-public (register-operator (operator principal) (label (string-ascii 60)))
   (begin
-    (asserts! (is-none (map-get? bridge-records { hash: hash, source-chain: source-chain })) (err u1))
-    (map-set bridge-records { hash: hash, source-chain: source-chain }
-      { anchor-chain: anchor-chain, anchor-address: anchor-address,
-        bridged-at: stacks-block-height, bridger: tx-sender, confirmed: false })
-    (var-set total-bridges (+ (var-get total-bridges) u1))
+    (asserts! (is-eq tx-sender (var-get bridge-admin)) (err u401))
+    (map-set relay-operators { operator: operator }
+      { registered-at: stacks-block-height, active: true,
+        relay-count: u0, label: label })
     (ok true)))
 
-;; confirm-bridge: mark a bridge record as confirmed
-(define-public (confirm-bridge (hash (buff 32)) (source-chain (string-ascii 20)))
-  (let ((record (unwrap! (map-get? bridge-records { hash: hash, source-chain: source-chain }) (err u2))))
-    (asserts! (is-eq tx-sender (get bridger record)) (err u3))
-    (map-set bridge-records { hash: hash, source-chain: source-chain }
-      (merge record { confirmed: true }))
-    (ok true)))
+;; relay: operator submits a cross-chain message
+;; Errors: u1 = not a registered operator
+(define-public (relay (source-chain (string-ascii 20))
+                       (dest-chain   (string-ascii 20))
+                       (payload-hash (buff 32)))
+  (let ((op (unwrap! (map-get? relay-operators { operator: tx-sender }) (err u1))))
+    (asserts! (get active op) (err u1))
+    (let ((id (+ (var-get message-count) u1)))
+      (map-set relay-messages { message-id: id }
+        { operator:     tx-sender,
+          source-chain: source-chain,
+          dest-chain:   dest-chain,
+          payload-hash: payload-hash,
+          relayed-at:   stacks-block-height,
+          confirmed:    false })
+      (map-set relay-operators { operator: tx-sender }
+        (merge op { relay-count: (+ (get relay-count op) u1) }))
+      (var-set message-count id)
+      (ok id))))
 
-(define-read-only (get-bridge (hash (buff 32)) (source-chain (string-ascii 20)))
-  (map-get? bridge-records { hash: hash, source-chain: source-chain }))
+;; confirm: admin confirms a relay message
+;; Errors: u401 = not admin, u2 = not found
+(define-public (confirm (message-id uint))
+  (begin
+    (asserts! (is-eq tx-sender (var-get bridge-admin)) (err u401))
+    (let ((m (unwrap! (map-get? relay-messages { message-id: message-id }) (err u2))))
+      (map-set relay-messages { message-id: message-id }
+        (merge m { confirmed: true }))
+      (ok true))))
 
-(define-read-only (is-multi-chain (hash (buff 32)) (chain-a (string-ascii 20)) (chain-b (string-ascii 20)))
-  (and
-    (is-some (map-get? bridge-records { hash: hash, source-chain: chain-a }))
-    (is-some (map-get? bridge-records { hash: hash, source-chain: chain-b }))))
+(define-read-only (get-message (message-id uint))
+  (map-get? relay-messages { message-id: message-id }))
+
+(define-read-only (get-operator (operator principal))
+  (map-get? relay-operators { operator: operator }))
+
+(define-read-only (get-message-count) (var-get message-count))
