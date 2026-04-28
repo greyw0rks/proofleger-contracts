@@ -1,29 +1,29 @@
 # Changelog
 
-## [2.16.0] - 2026-04-30
+## [2.17.0] - 2026-05-01
 
 ### Added
 
-**New Contracts — Protocol Completion:**
-- `governance.clar` — stake-weighted proposals with 60% pass threshold
-- `payment-splitter.clar` — proportional STX distribution across recipients
-- `zkp-verifier.clar` — on-chain registry of ZK proof verification attestations
-- `proofleger-v2.clar` — upgraded anchor contract with doc-type, verify, and pause
+**New Contracts — Ecosystem & Integrations:**
+- `talent-verifier.clar` — record Talent Protocol builder scores on-chain
+- `sdk-registry.clar` — register SDK integrations with per-app call tracking
+- `bulk-attest.clar` — attest 2 or 3 credential hashes in one transaction
+- `credential-expiry.clar` — time-limited credentials with renew and revoke
 
 **Tests:**
-- governance_test.ts — 4 test cases
-- payment_splitter_test.ts — 4 test cases
-- zkp_verifier_test.ts — 4 test cases
-- proofleger_v2_test.ts — 4 test cases
+- talent_verifier_test.ts — 4 test cases
+- sdk_registry_test.ts — 4 test cases
+- bulk_attest_test.ts — 4 test cases
+- credential_expiry_test.ts — 4 test cases
 
 **Docs:**
-- governance.md — proposal and voting guide
+- talent-protocol.md — Talent Protocol integration guide
+
+## [2.16.0] - 2026-04-30
+- governance, payment-splitter, zkp-verifier, proofleger-v2
 
 ## [2.15.0] - 2026-04-29
 - recovery, credential-vault, proof-mirror, staking
-
-## [2.14.0] - 2026-04-28
-- whitelist, proof-router, audit-trail, genesis
 
 ## [1.0.0] - 2026-03-08
 - Initial mainnet deployment
