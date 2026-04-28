@@ -1,26 +1,26 @@
 # Changelog
 
-## [2.18.0] - 2026-05-02
+## [2.19.0] - 2026-05-03
 
 ### Added
 
-**New Contracts — Protocol Completion Layer:**
-- `notary-v2.clar` — notarize documents with witness co-signatures and seal
-- `revenue-share.clar` — accumulate and distribute protocol revenue to stakers
-- `achievement.clar` — award on-chain badges for protocol milestones
-- `cross-chain-bridge.clar` — registry of relay operators and cross-chain messages
+**New Contracts — Data Layer:**
+- `proof-counter.clar` — per-wallet action counters with milestone recording
+- `document-hash-v2.clar` — anchor with IPFS/Arweave metadata URI and optional expiry
+- `attestation-registry.clar` — public third-party attestations with weight scoring
+- `vault-access-log.clar` — immutable log of credential vault access events
 
 **Tests:**
-- notary_v2_test.ts — 4 test cases
-- revenue_share_test.ts — 4 test cases
-- achievement_test.ts — 4 test cases
-- cross_chain_bridge_test.ts — 4 test cases
+- proof_counter_test.ts — 4 test cases
+- document_hash_v2_test.ts — 4 test cases
+- attestation_registry_test.ts — 4 test cases
+- vault_access_log_test.ts — 4 test cases
+
+## [2.18.0] - 2026-05-02
+- notary-v2, revenue-share, achievement, cross-chain-bridge
 
 ## [2.17.0] - 2026-05-01
 - talent-verifier, sdk-registry, bulk-attest, credential-expiry
-
-## [2.16.0] - 2026-04-30
-- governance, payment-splitter, zkp-verifier, proofleger-v2
 
 ## [1.0.0] - 2026-03-08
 - Initial mainnet deployment
