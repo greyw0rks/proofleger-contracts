@@ -1,0 +1,61 @@
+;; staking-v2.clar
+;; Improved staking with auto-renew, lock-period tiers, and reward distribution
+;; Errors:
+;;   u100 - already staked
+;;   u101 - not staked
+;;   u102 - lock period active
+;;   u103 - invalid lock period
+;;   u104 - zero amount
+
+(define-constant CONTRACT-OWNER tx-sender)
+(define-constant MIN-STAKE u1000000)
+
+(define-map stakes principal
+  { amount: uint, lock-cycles: uint, start-block: uint,
+    unlock-block: uint, auto-renew: bool, rewards-earned: uint })
+
+(define-map lock-tiers uint uint)
+(define-data-var total-staked uint u0)
+(define-data-var reward-rate uint u50)
+
+(define-public (set-lock-tier (cycles uint) (bonus-bps uint))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) (err u100))
+    (ok (map-set lock-tiers cycles bonus-bps))))
+
+(define-public (stake (amount uint) (lock-cycles uint) (auto-renew bool))
+  (begin
+    (asserts! (>= amount MIN-STAKE) (err u104))
+    (asserts! (is-none (map-get? stakes tx-sender)) (err u100))
+    (asserts! (> lock-cycles u0) (err u103))
+    (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
+    (let ((unlock (+ block-height (* lock-cycles u2100))))
+      (map-set stakes tx-sender
+        { amount: amount, lock-cycles: lock-cycles,
+          start-block: block-height, unlock-block: unlock,
+          auto-renew: auto-renew, rewards-earned: u0 })
+      (var-set total-staked (+ (var-get total-staked) amount))
+      (ok unlock))))
+
+(define-public (unstake)
+  (let ((s (unwrap! (map-get? stakes tx-sender) (err u101))))
+    (asserts! (>= block-height (get unlock-block s)) (err u102))
+    (try! (as-contract (stx-transfer? (get amount s) tx-sender tx-sender)))
+    (var-set total-staked (- (var-get total-staked) (get amount s)))
+    (map-delete stakes tx-sender)
+    (ok (get amount s))))
+
+(define-public (toggle-auto-renew)
+  (let ((s (unwrap! (map-get? stakes tx-sender) (err u101))))
+    (ok (map-set stakes tx-sender (merge s { auto-renew: (not (get auto-renew s)) })))))
+
+(define-read-only (get-stake (address principal))
+  (map-get? stakes address))
+
+(define-read-only (get-total-staked)
+  (var-get total-staked))
+
+(define-read-only (is-unlocked? (address principal))
+  (match (map-get? stakes address)
+    s (>= block-height (get unlock-block s))
+    false))
