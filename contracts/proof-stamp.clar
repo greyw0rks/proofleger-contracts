@@ -1,0 +1,17 @@
+;; proof-stamp.clar
+;; Errors: u100 not-authorized, u101 not-found, u102 stamp-exists, u103 expired
+(define-constant CONTRACT-OWNER tx-sender)
+(define-map authorized-stampers principal bool)
+(define-map stamps { proof-hash: (buff 32), stamper: principal } { level: (string-ascii 20), issued-at: uint, expires-at: uint, note: (string-ascii 80) })
+(define-public (authorize-stamper (s principal))
+  (begin (asserts! (is-eq tx-sender CONTRACT-OWNER) (err u100)) (ok (map-set authorized-stampers s true))))
+(define-public (issue-stamp (proof-hash (buff 32)) (level (string-ascii 20)) (duration uint) (note (string-ascii 80)))
+  (begin (asserts! (default-to false (map-get? authorized-stampers tx-sender)) (err u100))
+  (asserts! (is-none (map-get? stamps { proof-hash: proof-hash, stamper: tx-sender })) (err u102))
+  (ok (map-set stamps { proof-hash: proof-hash, stamper: tx-sender } { level: level, issued-at: block-height, expires-at: (+ block-height duration), note: note }))))
+(define-public (revoke-stamp (proof-hash (buff 32)))
+  (begin (asserts! (is-some (map-get? stamps { proof-hash: proof-hash, stamper: tx-sender })) (err u101))
+  (ok (map-delete stamps { proof-hash: proof-hash, stamper: tx-sender }))))
+(define-read-only (get-stamp (h (buff 32)) (s principal)) (map-get? stamps { proof-hash: h, stamper: s }))
+(define-read-only (is-valid-stamp? (h (buff 32)) (s principal))
+  (match (map-get? stamps { proof-hash: h, stamper: s }) st (<= block-height (get expires-at st)) false))
