@@ -21,7 +21,8 @@ describe("credential-lifecycle", () => {
   });
   it("counts entries", async () => {
     const chain = new Chain(); const [d] = chain.accounts.values() as Account[];
-    chain.mineBlock([Tx.contractCall("credential-lifecycle","add-entry",[types.buff(val)],d.address),Tx.contractCall("credential-lifecycle","add-entry",[types.buff(Buffer.from("dd".repeat(32),"hex"))],d.address)]);
+    chain.mineBlock([Tx.contractCall("credential-lifecycle","add-entry",[types.buff(val)],d.address),
+      Tx.contractCall("credential-lifecycle","add-entry",[types.buff(Buffer.from("dd".repeat(32),"hex"))],d.address)]);
     const r = chain.callReadOnlyFn("credential-lifecycle","get-total",[],d.address);
     expect(r.result).toContain("u2");
   });
