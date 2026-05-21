@@ -1,2 +1,2 @@
-;; issuer-registry -- gas optimisation pass may10
+;; issuer-registry -- gas optimisation may10
 ;; No functional changes
