@@ -1,2 +1,2 @@
-;; staking -- gas optimisation pass may10
+;; staking -- gas optimisation may10
 ;; No functional changes
