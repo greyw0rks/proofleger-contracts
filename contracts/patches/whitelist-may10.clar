@@ -1,2 +1,2 @@
-;; whitelist -- gas optimisation pass may10
+;; whitelist -- gas optimisation may10
 ;; No functional changes
