@@ -1,2 +1,2 @@
-;; proof-nft -- gas optimisation pass may10
+;; proof-nft -- gas optimisation may10
 ;; No functional changes
