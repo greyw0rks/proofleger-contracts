@@ -1,2 +1,2 @@
-;; sbt -- gas optimisation pass may10
+;; sbt -- gas optimisation may10
 ;; No functional changes
