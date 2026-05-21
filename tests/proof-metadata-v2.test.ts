@@ -21,7 +21,8 @@ describe("proof-metadata-v2", () => {
   });
   it("counts entries", async () => {
     const chain = new Chain(); const [d] = chain.accounts.values() as Account[];
-    chain.mineBlock([Tx.contractCall("proof-metadata-v2","add-entry",[types.buff(val)],d.address),Tx.contractCall("proof-metadata-v2","add-entry",[types.buff(Buffer.from("dd".repeat(32),"hex"))],d.address)]);
+    chain.mineBlock([Tx.contractCall("proof-metadata-v2","add-entry",[types.buff(val)],d.address),
+      Tx.contractCall("proof-metadata-v2","add-entry",[types.buff(Buffer.from("dd".repeat(32),"hex"))],d.address)]);
     const r = chain.callReadOnlyFn("proof-metadata-v2","get-total",[],d.address);
     expect(r.result).toContain("u2");
   });
