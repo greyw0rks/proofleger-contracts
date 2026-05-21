@@ -1,2 +1,2 @@
-;; attestation-registry -- gas optimisation pass may10
+;; attestation-registry -- gas optimisation may10
 ;; No functional changes
