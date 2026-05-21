@@ -21,7 +21,8 @@ describe("notification-registry", () => {
   });
   it("counts entries", async () => {
     const chain = new Chain(); const [d] = chain.accounts.values() as Account[];
-    chain.mineBlock([Tx.contractCall("notification-registry","add-entry",[types.buff(val)],d.address),Tx.contractCall("notification-registry","add-entry",[types.buff(Buffer.from("dd".repeat(32),"hex"))],d.address)]);
+    chain.mineBlock([Tx.contractCall("notification-registry","add-entry",[types.buff(val)],d.address),
+      Tx.contractCall("notification-registry","add-entry",[types.buff(Buffer.from("dd".repeat(32),"hex"))],d.address)]);
     const r = chain.callReadOnlyFn("notification-registry","get-total",[],d.address);
     expect(r.result).toContain("u2");
   });
