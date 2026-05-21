@@ -1,2 +1,2 @@
-;; credential-chain -- gas optimisation pass may10
+;; credential-chain -- gas optimisation may10
 ;; No functional changes
