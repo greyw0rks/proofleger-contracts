@@ -1,27 +1,28 @@
 import { describe, it, expect } from "vitest";
 import { Clarinet, Tx, Chain, Account, types } from "@hirosystems/clarinet-sdk";
 describe("referral-reward", () => {
-  it("owner funds pool", async () => {
+  const val = Buffer.from("cc".repeat(32), "hex");
+  it("adds entry", async () => {
     const chain = new Chain(); const [d] = chain.accounts.values() as Account[];
-    const b = chain.mineBlock([Tx.contractCall("referral-reward","fund-pool",[types.uint(10000000)],d.address)]);
+    const b = chain.mineBlock([Tx.contractCall("referral-reward","add-entry",[types.buff(val)],d.address)]);
     expect(b.receipts[0].result).toContain("ok");
   });
-  it("sets tier multiplier", async () => {
+  it("owner deactivates", async () => {
     const chain = new Chain(); const [d] = chain.accounts.values() as Account[];
-    const b = chain.mineBlock([Tx.contractCall("referral-reward","set-tier-multiplier",[types.uint(10),types.uint(3)],d.address)]);
+    chain.mineBlock([Tx.contractCall("referral-reward","add-entry",[types.buff(val)],d.address)]);
+    const b = chain.mineBlock([Tx.contractCall("referral-reward","deactivate-entry",[types.uint(1)],d.address)]);
     expect(b.receipts[0].result).toContain("ok");
   });
-  it("claimant receives reward", async () => {
-    const chain = new Chain(); const [d, c] = chain.accounts.values() as Account[];
-    chain.mineBlock([Tx.contractCall("referral-reward","fund-pool",[types.uint(50000000)],d.address)]);
-    const b = chain.mineBlock([Tx.contractCall("referral-reward","claim-rewards",[types.uint(3)],c.address)]);
-    expect(b.receipts[0].result).toContain("ok");
+  it("non-owner rejected", async () => {
+    const chain = new Chain(); const [d,s] = chain.accounts.values() as Account[];
+    chain.mineBlock([Tx.contractCall("referral-reward","add-entry",[types.buff(val)],d.address)]);
+    const b = chain.mineBlock([Tx.contractCall("referral-reward","deactivate-entry",[types.uint(1)],s.address)]);
+    expect(b.receipts[0].result).toContain("err u100");
   });
-  it("rejects double claim", async () => {
-    const chain = new Chain(); const [d, c] = chain.accounts.values() as Account[];
-    chain.mineBlock([Tx.contractCall("referral-reward","fund-pool",[types.uint(50000000)],d.address)]);
-    chain.mineBlock([Tx.contractCall("referral-reward","claim-rewards",[types.uint(2)],c.address)]);
-    const b = chain.mineBlock([Tx.contractCall("referral-reward","claim-rewards",[types.uint(2)],c.address)]);
-    expect(b.receipts[0].result).toContain("err u101");
+  it("counts entries", async () => {
+    const chain = new Chain(); const [d] = chain.accounts.values() as Account[];
+    chain.mineBlock([Tx.contractCall("referral-reward","add-entry",[types.buff(val)],d.address),Tx.contractCall("referral-reward","add-entry",[types.buff(Buffer.from("dd".repeat(32),"hex"))],d.address)]);
+    const r = chain.callReadOnlyFn("referral-reward","get-total",[],d.address);
+    expect(r.result).toContain("u2");
   });
 });
